@@ -114,7 +114,8 @@ class DatasetController extends Controller
 
         $analysisService->analyze($dataset, 'manual');
 
-        return redirect("/datasets/{$dataset->id}")->with('success', 'Проверка набора запущена повторно.');
+        return redirect("/datasets/{$dataset->id}")
+            ->with('success', 'Проверка набора запущена повторно.');
     }
 
     public function destroy(Dataset $dataset): RedirectResponse
@@ -123,6 +124,7 @@ class DatasetController extends Controller
 
         $dataset->delete();
 
-        return redirect('/datasets')->with('success', 'Набор данных удален.');
+        return redirect('/datasets', 303)
+            ->with('success', 'Набор данных удален.');
     }
 }

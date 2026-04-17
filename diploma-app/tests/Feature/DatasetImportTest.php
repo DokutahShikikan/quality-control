@@ -72,4 +72,29 @@ class DatasetImportTest extends TestCase
             'original_value' => 'not_a_number',
         ]);
     }
+
+    public function test_user_is_redirected_to_dataset_list_after_delete(): void
+    {
+        $this->seed();
+
+        $user = User::factory()->create();
+        $dataset = Dataset::query()->create([
+            'user_id' => $user->id,
+            'name' => 'Тестовый набор',
+            'description' => 'Набор для удаления',
+            'source_filename' => 'clients.csv',
+            'source_path' => 'imports/test.csv',
+            'source_mime' => 'text/csv',
+            'import_status' => 'ready',
+            'review_status' => 'needs_review',
+            'headers' => ['email'],
+            'metrics' => [],
+        ]);
+
+        $response = $this->actingAs($user)->delete("/datasets/{$dataset->id}");
+
+        $response->assertRedirect('/datasets');
+        $response->assertStatus(303);
+        $this->assertDatabaseMissing('datasets', ['id' => $dataset->id]);
+    }
 }
