@@ -33,7 +33,7 @@ class IssueController extends Controller
 
         match ($request->string('sort')->value()) {
             'oldest' => $issueQuery->oldest(),
-            'severity' => $issueQuery->orderByRaw(\"case severity when 'high' then 1 when 'medium' then 2 else 3 end\")->latest(),
+            'severity' => $issueQuery->orderByRaw("case severity when 'high' then 1 when 'medium' then 2 else 3 end")->latest(),
             'status' => $issueQuery->orderBy('status')->latest(),
             default => $issueQuery->latest(),
         };
