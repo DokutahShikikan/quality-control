@@ -3,15 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\DatasetRequest;
+use App\Jobs\ProcessDatasetImport;
 use App\Models\Dataset;
 use App\Services\DatasetAnalysisService;
-use App\Services\SpreadsheetImportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Throwable;
 
 class DatasetController extends Controller
 {
@@ -61,57 +60,36 @@ class DatasetController extends Controller
         return view('datasets.create');
     }
 
-    public function store(
-        DatasetRequest $request,
-        SpreadsheetImportService $importService,
-        DatasetAnalysisService $analysisService,
-    ): RedirectResponse {
-        @set_time_limit(0);
-
+    public function store(DatasetRequest $request): RedirectResponse
+    {
         $file = $request->file('source_file');
+        $storedFilename = now()->format('YmdHis').'-'.uniqid().'-'.$file->getClientOriginalName();
+        $storedPath = $file->storeAs('imports', $storedFilename, 'local');
 
-        try {
-            $import = $importService->import($file);
-        } catch (Throwable $exception) {
-            return back()
-                ->withInput()
-                ->withErrors(['source_file' => $exception->getMessage()]);
-        }
-
-        $dataset = DB::transaction(function () use ($request, $file, $import) {
-            $dataset = Auth::user()->datasets()->create([
+        $dataset = DB::transaction(function () use ($request, $file, $storedPath) {
+            return Auth::user()->datasets()->create([
                 'name' => $request->string('name')->value(),
                 'description' => $request->string('description')->value() ?: null,
                 'source_filename' => $file->getClientOriginalName(),
+                'source_path' => $storedPath,
                 'source_mime' => $file->getMimeType(),
-                'headers' => $import['headers'],
-                'total_rows' => count($import['rows']),
-                'total_columns' => count($import['headers']),
+                'headers' => [],
+                'total_rows' => 0,
+                'total_columns' => 0,
                 'deepseek_enabled' => $request->boolean('deepseek_enabled'),
-                'import_status' => 'ready',
+                'import_status' => 'queued',
+                'import_error' => null,
             ]);
-
-            $timestamp = now();
-
-            foreach (array_chunk($import['rows'], 500) as $chunk) {
-                $records = array_map(fn (array $row) => [
-                    'dataset_id' => $dataset->id,
-                    'row_index' => $row['row_index'],
-                    'payload' => json_encode($row['payload'], JSON_UNESCAPED_UNICODE),
-                    'created_at' => $timestamp,
-                    'updated_at' => $timestamp,
-                ], $chunk);
-
-                DB::table('dataset_rows')->insert($records);
-            }
-
-            return $dataset;
         });
 
-        $analysisService->analyze($dataset, 'import');
+        if (app()->environment('testing')) {
+            ProcessDatasetImport::dispatchSync($dataset->id);
+        } else {
+            ProcessDatasetImport::dispatch($dataset->id);
+        }
 
         return redirect("/datasets/{$dataset->id}")
-            ->with('success', 'Набор загружен, проверен по regex-правилам и готов к разбору инцидентов.');
+            ->with('success', 'Набор поставлен в очередь на импорт. Данные и инциденты появятся после завершения обработки.');
     }
 
     public function show(Dataset $dataset)

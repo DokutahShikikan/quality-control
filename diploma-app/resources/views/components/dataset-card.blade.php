@@ -1,5 +1,18 @@
 @props(['dataset'])
 
+@php
+    $statusLabel = match ($dataset->import_status) {
+        'queued' => 'В очереди',
+        'processing' => 'Импортируется',
+        'failed' => 'Ошибка импорта',
+        default => $dataset->review_status === 'clean' ? 'Чисто' : 'Нужна проверка',
+    };
+
+    $statusTone = $dataset->import_status === 'ready' && $dataset->review_status === 'clean'
+        ? 'clean'
+        : 'review';
+@endphp
+
 <a href="/datasets/{{ $dataset->id }}" class="dataset-card">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -7,8 +20,8 @@
             <p class="mt-2 text-sm text-slate-500">{{ $dataset->source_filename }}</p>
         </div>
 
-        <x-status-pill :tone="$dataset->review_status === 'clean' ? 'clean' : 'review'">
-            {{ $dataset->review_status === 'clean' ? 'Чисто' : 'Нужна проверка' }}
+        <x-status-pill :tone="$statusTone">
+            {{ $statusLabel }}
         </x-status-pill>
     </div>
 

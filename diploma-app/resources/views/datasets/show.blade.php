@@ -1,5 +1,32 @@
 <x-layout :title="$dataset->name" current="datasets">
+    @php
+        $importLabel = match ($dataset->import_status) {
+            'queued' => 'Файл стоит в очереди на импорт.',
+            'processing' => 'Файл сейчас обрабатывается.',
+            'failed' => 'Импорт завершился с ошибкой.',
+            default => 'Импорт завершён.',
+        };
+    @endphp
+
     <div class="space-y-8">
+        @if($dataset->import_status !== 'ready')
+            <section class="panel">
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div class="space-y-2">
+                        <h2 class="panel-title">Статус импорта</h2>
+                        <p class="text-base text-slate-700">{{ $importLabel }}</p>
+                        @if($dataset->import_error)
+                            <p class="text-sm text-rose-600">{{ $dataset->import_error }}</p>
+                        @endif
+                    </div>
+
+                    <x-status-pill tone="review">
+                        {{ strtoupper($dataset->import_status) }}
+                    </x-status-pill>
+                </div>
+            </section>
+        @endif
+
         <div class="metric-grid">
             <x-metric-card label="Строк" :value="$dataset->total_rows" />
             <x-metric-card label="Открытые инциденты" :value="data_get($dataset->metrics, 'open_issues', 0)" />
@@ -17,23 +44,26 @@
                         </p>
                     </div>
 
-                    <x-status-pill :tone="$dataset->review_status === 'clean' ? 'clean' : 'review'">
-                        {{ $dataset->review_status === 'clean' ? 'Чистый набор' : 'Требует разбора' }}
+                    <x-status-pill :tone="$dataset->import_status === 'ready' && $dataset->review_status === 'clean' ? 'clean' : 'review'">
+                        {{ $dataset->import_status === 'ready' ? ($dataset->review_status === 'clean' ? 'Чистый набор' : 'Требует разбора') : strtoupper($dataset->import_status) }}
                     </x-status-pill>
                 </div>
 
                 <dl class="mt-8 grid gap-4 md:grid-cols-2">
                     <x-mini-stat label="Исходный файл" :value="$dataset->source_filename" />
+                    <x-mini-stat label="Статус импорта" :value="$dataset->import_status" />
                     <x-mini-stat label="Последняя проверка" :value="optional($dataset->last_checked_at)->format('d.m.Y H:i') ?: 'Еще не запускалась'" />
                     <x-mini-stat label="Format error rate" :value="data_get($dataset->metrics, 'format_error_rate', 0).'%'"/>
                     <x-mini-stat label="DeepSeek этап" :value="data_get($dataset->metrics, 'deepseek_stage_ready', false) ? 'Можно запускать' : 'Сначала regex'" />
                 </dl>
 
                 <div class="mt-8 flex flex-wrap gap-4">
-                    <form method="POST" action="/datasets/{{ $dataset->id }}/analyze">
-                        @csrf
-                        <button class="primary-button" type="submit">Запустить проверку заново</button>
-                    </form>
+                    @if($dataset->import_status === 'ready')
+                        <form method="POST" action="/datasets/{{ $dataset->id }}/analyze">
+                            @csrf
+                            <button class="primary-button" type="submit">Запустить проверку заново</button>
+                        </form>
+                    @endif
                     <a href="/issues" class="secondary-button">Открыть инциденты</a>
                     <a href="/duplicates" class="secondary-button">Открыть дубликаты</a>
                     <form method="POST" action="/datasets/{{ $dataset->id }}">

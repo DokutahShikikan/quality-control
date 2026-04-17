@@ -15,11 +15,25 @@ class SpreadsheetImportService
 
     public function import(UploadedFile $file): array
     {
-        $extension = strtolower($file->getClientOriginalExtension());
+        return $this->importFromPath(
+            $file->getRealPath(),
+            strtolower($file->getClientOriginalExtension())
+        );
+    }
 
+    public function importStoredFile(string $path, ?string $originalName = null): array
+    {
+        return $this->importFromPath(
+            $path,
+            strtolower(pathinfo($originalName ?: $path, PATHINFO_EXTENSION))
+        );
+    }
+
+    private function importFromPath(string $path, string $extension): array
+    {
         return match ($extension) {
-            'csv', 'txt' => $this->importCsv($file->getRealPath()),
-            'xlsx' => $this->importXlsx($file->getRealPath()),
+            'csv', 'txt' => $this->importCsv($path),
+            'xlsx' => $this->importXlsx($path),
             default => throw new RuntimeException('Поддерживаются только CSV и XLSX файлы.'),
         };
     }
@@ -60,6 +74,10 @@ class SpreadsheetImportService
 
     private function importXlsx(string $path): array
     {
+        if (! class_exists(ZipArchive::class)) {
+            throw new RuntimeException('Для импорта XLSX в PHP должно быть включено расширение zip.');
+        }
+
         $archive = new ZipArchive();
 
         if ($archive->open($path) !== true) {
@@ -136,9 +154,11 @@ class SpreadsheetImportService
             }
 
             $parts = [];
+
             foreach ($children->r as $run) {
                 $parts[] = (string) $run->children(self::XLSX_NS)->t;
             }
+
             $result[] = implode('', $parts);
         }
 
