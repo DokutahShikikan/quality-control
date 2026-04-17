@@ -40,33 +40,36 @@
         </div>
 
         <div class="panel">
-            <form method="GET" action="/datasets" class="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_220px_220px_auto]">
-                <x-forms.input-field
-                    name="q"
-                    label="Поиск"
-                    :value="$filters['q'] ?? ''"
-                    placeholder="Название, описание или имя файла"
-                />
+            <form method="GET" action="/datasets" class="space-y-4">
+                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    <x-forms.input-field
+                        class="md:col-span-2 xl:col-span-1"
+                        name="q"
+                        label="Поиск"
+                        :value="$filters['q'] ?? ''"
+                        placeholder="Название, описание или имя файла"
+                    />
 
-                <label class="form-field">
-                    <span class="form-label">Статус набора</span>
-                    <select name="review_status" class="text-field">
-                        <option value="">Все</option>
-                        <option value="needs_review" @selected(($filters['review_status'] ?? '') === 'needs_review')>Требует разбора</option>
-                        <option value="clean" @selected(($filters['review_status'] ?? '') === 'clean')>Чистый</option>
-                    </select>
-                </label>
+                    <label class="form-field">
+                        <span class="form-label">Статус набора</span>
+                        <select name="review_status" class="text-field">
+                            <option value="">Все</option>
+                            <option value="needs_review" @selected(($filters['review_status'] ?? '') === 'needs_review')>Требует разбора</option>
+                            <option value="clean" @selected(($filters['review_status'] ?? '') === 'clean')>Чистый</option>
+                        </select>
+                    </label>
 
-                <label class="form-field">
-                    <span class="form-label">Сортировка</span>
-                    <select name="sort" class="text-field">
-                        <option value="newest" @selected(($filters['sort'] ?? '') === 'newest')>Сначала новые</option>
-                        <option value="oldest" @selected(($filters['sort'] ?? '') === 'oldest')>Сначала старые</option>
-                        <option value="most_issues" @selected(($filters['sort'] ?? '') === 'most_issues')>Недавно обновленные</option>
-                    </select>
-                </label>
+                    <label class="form-field">
+                        <span class="form-label">Сортировка</span>
+                        <select name="sort" class="text-field">
+                            <option value="newest" @selected(($filters['sort'] ?? '') === 'newest')>Сначала новые</option>
+                            <option value="oldest" @selected(($filters['sort'] ?? '') === 'oldest')>Сначала старые</option>
+                            <option value="most_issues" @selected(($filters['sort'] ?? '') === 'most_issues')>Недавно обновленные</option>
+                        </select>
+                    </label>
+                </div>
 
-                <x-form-actions class="items-end">
+                <x-form-actions>
                     <button type="submit" class="primary-button">Применить</button>
                     <a href="/datasets" class="secondary-button">Сбросить</a>
                 </x-form-actions>

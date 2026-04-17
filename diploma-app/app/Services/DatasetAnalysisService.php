@@ -23,7 +23,7 @@ class DatasetAnalysisService
         $dataset->duplicateCandidates()->delete();
 
         $rows = $dataset->activeRows()->orderBy('row_index')->get();
-        $rules = QualityRule::query()->where('is_active', true)->get();
+        $rules = $this->resolveRules();
 
         $checkRun = $dataset->checkRuns()->create([
             'status' => 'running',
@@ -33,7 +33,6 @@ class DatasetAnalysisService
         ]);
 
         $issuesCount = 0;
-        $duplicatePairsCount = 0;
 
         foreach ($rows as $row) {
             $issuesCount += $this->detectMissingValues($dataset, $checkRun, $row);
@@ -90,6 +89,80 @@ class DatasetAnalysisService
         ]);
     }
 
+    private function resolveRules(): Collection
+    {
+        $storedRules = QualityRule::query()
+            ->where('is_active', true)
+            ->get()
+            ->map(fn (QualityRule $rule) => $this->normalizeRule([
+                'name' => $rule->name,
+                'issue_type' => $rule->issue_type,
+                'severity' => $rule->severity,
+                'description' => $rule->description,
+                'pattern' => $rule->pattern,
+                'column_hints' => $rule->column_hints ?? [],
+            ]));
+
+        $rulesByName = $storedRules->keyBy('name');
+
+        foreach ($this->defaultRules() as $rule) {
+            $mergedRule = array_merge($rule, $rulesByName->get($rule['name'], []));
+            $mergedRule['column_hints'] = $this->normalizeColumnHints(
+                $mergedRule['column_hints'] ?? $rule['column_hints']
+            );
+
+            $rulesByName->put($rule['name'], $mergedRule);
+        }
+
+        return $rulesByName->values();
+    }
+
+    private function defaultRules(): array
+    {
+        return [
+            [
+                'name' => 'Email format',
+                'issue_type' => 'invalid_format',
+                'severity' => 'high',
+                'description' => 'Проверяет адреса электронной почты и предлагает lowercase/trim нормализацию.',
+                'pattern' => '^[^\s@]+@[^\s@]+\.[^\s@]+$',
+                'column_hints' => ['email', 'e-mail', 'почта'],
+            ],
+            [
+                'name' => 'Phone format',
+                'issue_type' => 'invalid_format',
+                'severity' => 'medium',
+                'description' => 'Проверяет телефонные номера и пытается привести их к международному виду.',
+                'pattern' => '^\+?\d[\d\-\(\)\s]{9,}$',
+                'column_hints' => ['phone', 'tel', 'mobile', 'телефон'],
+            ],
+            [
+                'name' => 'Date format',
+                'issue_type' => 'invalid_format',
+                'severity' => 'medium',
+                'description' => 'Проверяет даты и нормализует их к ISO-формату YYYY-MM-DD.',
+                'pattern' => '^\d{4}-\d{2}-\d{2}$',
+                'column_hints' => ['date', 'birth', 'created', 'дата'],
+            ],
+            [
+                'name' => 'Numeric value',
+                'issue_type' => 'invalid_format',
+                'severity' => 'high',
+                'description' => 'Проверяет числовые поля, например salary, amount, total, score или price.',
+                'pattern' => '^-?\d+(?:[.,]\d+)?$',
+                'column_hints' => ['salary', 'amount', 'price', 'cost', 'total', 'score', 'qty', 'quantity', 'sum'],
+            ],
+            [
+                'name' => 'Status format',
+                'issue_type' => 'invalid_format',
+                'severity' => 'medium',
+                'description' => 'Проверяет, что статус соответствует одному из допустимых значений.',
+                'pattern' => '^(active|inactive|pending)$',
+                'column_hints' => ['status', 'state', 'статус'],
+            ],
+        ];
+    }
+
     private function detectMissingValues(Dataset $dataset, CheckRun $checkRun, DatasetRow $row): int
     {
         $created = 0;
@@ -125,7 +198,9 @@ class DatasetAnalysisService
         $created = 0;
 
         foreach ($row->payload as $column => $value) {
-            if (trim((string) $value) === '') {
+            $value = trim((string) $value);
+
+            if ($value === '') {
                 continue;
             }
 
@@ -134,23 +209,23 @@ class DatasetAnalysisService
                     continue;
                 }
 
-                if ($rule->pattern && preg_match('/'.$rule->pattern.'/u', (string) $value)) {
+                $pattern = data_get($rule, 'pattern');
+
+                if ($pattern && preg_match('/'.$pattern.'/u', $value)) {
                     continue;
                 }
-
-                $suggested = $this->buildSuggestion($rule->name, (string) $value);
 
                 Issue::create([
                     'dataset_id' => $dataset->id,
                     'check_run_id' => $checkRun->id,
                     'dataset_row_id' => $row->id,
                     'column_name' => $column,
-                    'issue_type' => $rule->issue_type,
-                    'severity' => $rule->severity,
-                    'title' => $rule->name,
-                    'message' => $rule->description ?: "Проверка \"{$rule->name}\" не прошла для колонки \"{$column}\".",
-                    'original_value' => (string) $value,
-                    'suggested_value' => $suggested,
+                    'issue_type' => data_get($rule, 'issue_type', 'invalid_format'),
+                    'severity' => data_get($rule, 'severity', 'medium'),
+                    'title' => data_get($rule, 'name', 'Format rule'),
+                    'message' => data_get($rule, 'description') ?: "Проверка не прошла для колонки \"{$column}\".",
+                    'original_value' => $value,
+                    'suggested_value' => $this->buildSuggestion((string) data_get($rule, 'name'), $value),
                     'suggestion_source' => 'regex',
                     'meta' => ['row_index' => $row->row_index],
                 ]);
@@ -213,13 +288,43 @@ class DatasetAnalysisService
         ]);
     }
 
-    private function ruleMatchesColumn(QualityRule $rule, string $column): bool
+    private function ruleMatchesColumn(array $rule, string $column): bool
     {
         $column = Str::lower($column);
 
-        return collect($rule->column_hints ?? [])->contains(
+        return collect($this->normalizeColumnHints(data_get($rule, 'column_hints', [])))->contains(
             fn (string $hint) => Str::contains($column, Str::lower($hint))
         );
+    }
+
+    private function normalizeRule(array $rule): array
+    {
+        $rule['column_hints'] = $this->normalizeColumnHints($rule['column_hints'] ?? []);
+
+        return $rule;
+    }
+
+    private function normalizeColumnHints(mixed $columnHints): array
+    {
+        if (is_string($columnHints)) {
+            $decoded = json_decode($columnHints, true);
+
+            if (is_array($decoded)) {
+                $columnHints = $decoded;
+            } else {
+                $columnHints = [$columnHints];
+            }
+        }
+
+        if (! is_array($columnHints)) {
+            return [];
+        }
+
+        return collect($columnHints)
+            ->map(fn (mixed $hint) => trim((string) $hint))
+            ->filter()
+            ->values()
+            ->all();
     }
 
     private function buildSuggestion(string $ruleName, string $value): ?string
@@ -228,6 +333,8 @@ class DatasetAnalysisService
             'Email format' => Str::lower(trim($value)),
             'Phone format' => $this->normalizePhone($value),
             'Date format' => $this->normalizeDate($value),
+            'Numeric value' => $this->normalizeNumeric($value),
+            'Status format' => $this->normalizeStatus($value),
             default => null,
         };
     }
@@ -260,5 +367,19 @@ class DatasetAnalysisService
         }
 
         return null;
+    }
+
+    private function normalizeNumeric(string $value): ?string
+    {
+        $normalized = str_replace(',', '.', trim($value));
+
+        return preg_match('/^-?\d+(?:\.\d+)?$/', $normalized) ? $normalized : null;
+    }
+
+    private function normalizeStatus(string $value): ?string
+    {
+        $normalized = Str::lower(trim($value));
+
+        return in_array($normalized, ['active', 'inactive', 'pending'], true) ? $normalized : null;
     }
 }

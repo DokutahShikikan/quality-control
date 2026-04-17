@@ -44,4 +44,32 @@ class DatasetImportTest extends TestCase
         $this->assertGreaterThan(0, Issue::query()->count());
         $this->assertGreaterThan(0, DuplicateCandidate::query()->count());
     }
+
+    public function test_import_detects_invalid_numeric_values(): void
+    {
+        $this->seed();
+
+        $user = User::factory()->create();
+
+        $file = UploadedFile::fake()->createWithContent(
+            'salary.csv',
+            implode("\n", [
+                'full_name,salary,status',
+                'Анна Иванова,55000,active',
+                'Иван Петров,not_a_number,pending',
+            ])
+        );
+
+        $this->actingAs($user)->post('/datasets', [
+            'name' => 'Зарплаты',
+            'description' => 'Проверка числовых полей',
+            'source_file' => $file,
+        ]);
+
+        $this->assertDatabaseHas('issues', [
+            'column_name' => 'salary',
+            'title' => 'Numeric value',
+            'original_value' => 'not_a_number',
+        ]);
+    }
 }

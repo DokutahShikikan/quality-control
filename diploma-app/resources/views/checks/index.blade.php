@@ -1,45 +1,48 @@
 <x-layout title="Запуски проверок" current="checks">
     <div class="space-y-6">
         <div class="panel">
-            <form method="GET" action="/checks" class="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_180px_220px_220px_auto]">
-                <x-forms.input-field
-                    name="q"
-                    label="Поиск"
-                    :value="$filters['q'] ?? ''"
-                    placeholder="Набор, источник запуска или статус"
-                />
+            <form method="GET" action="/checks" class="space-y-4">
+                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <x-forms.input-field
+                        class="md:col-span-2 xl:col-span-1"
+                        name="q"
+                        label="Поиск"
+                        :value="$filters['q'] ?? ''"
+                        placeholder="Набор, источник запуска или статус"
+                    />
 
-                <label class="form-field">
-                    <span class="form-label">Статус</span>
-                    <select name="status" class="text-field">
-                        <option value="">Все</option>
-                        @foreach(['completed' => 'Завершен', 'running' => 'В процессе'] as $value => $label)
-                            <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </label>
+                    <label class="form-field">
+                        <span class="form-label">Статус</span>
+                        <select name="status" class="text-field">
+                            <option value="">Все</option>
+                            @foreach(['completed' => 'Завершен', 'running' => 'В процессе'] as $value => $label)
+                                <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </label>
 
-                <label class="form-field">
-                    <span class="form-label">Источник</span>
-                    <select name="trigger_source" class="text-field">
-                        <option value="">Все</option>
-                        @foreach(['import' => 'Импорт', 'manual' => 'Ручной запуск', 'regex_fix' => 'Regex-исправление', 'duplicate_resolution' => 'Разбор дублей'] as $value => $label)
-                            <option value="{{ $value }}" @selected(($filters['trigger_source'] ?? '') === $value)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </label>
+                    <label class="form-field">
+                        <span class="form-label">Источник</span>
+                        <select name="trigger_source" class="text-field">
+                            <option value="">Все</option>
+                            @foreach(['import' => 'Импорт', 'manual' => 'Ручной запуск', 'regex_fix' => 'Regex-исправление', 'duplicate_resolution' => 'Разбор дублей'] as $value => $label)
+                                <option value="{{ $value }}" @selected(($filters['trigger_source'] ?? '') === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </label>
 
-                <label class="form-field">
-                    <span class="form-label">Сортировка</span>
-                    <select name="sort" class="text-field">
-                        <option value="newest" @selected(($filters['sort'] ?? '') === 'newest')>Сначала новые</option>
-                        <option value="oldest" @selected(($filters['sort'] ?? '') === 'oldest')>Сначала старые</option>
-                        <option value="issues" @selected(($filters['sort'] ?? '') === 'issues')>По числу инцидентов</option>
-                        <option value="duplicates" @selected(($filters['sort'] ?? '') === 'duplicates')>По числу дублей</option>
-                    </select>
-                </label>
+                    <label class="form-field">
+                        <span class="form-label">Сортировка</span>
+                        <select name="sort" class="text-field">
+                            <option value="newest" @selected(($filters['sort'] ?? '') === 'newest')>Сначала новые</option>
+                            <option value="oldest" @selected(($filters['sort'] ?? '') === 'oldest')>Сначала старые</option>
+                            <option value="issues" @selected(($filters['sort'] ?? '') === 'issues')>По числу инцидентов</option>
+                            <option value="duplicates" @selected(($filters['sort'] ?? '') === 'duplicates')>По числу дублей</option>
+                        </select>
+                    </label>
+                </div>
 
-                <x-form-actions class="items-end">
+                <x-form-actions>
                     <button type="submit" class="primary-button">Применить</button>
                     <a href="/checks" class="secondary-button">Сбросить</a>
                 </x-form-actions>
