@@ -66,6 +66,8 @@ class DatasetController extends Controller
         SpreadsheetImportService $importService,
         DatasetAnalysisService $analysisService,
     ): RedirectResponse {
+        @set_time_limit(0);
+
         $file = $request->file('source_file');
 
         try {
@@ -89,7 +91,19 @@ class DatasetController extends Controller
                 'import_status' => 'ready',
             ]);
 
-            $dataset->rows()->createMany($import['rows']);
+            $timestamp = now();
+
+            foreach (array_chunk($import['rows'], 500) as $chunk) {
+                $records = array_map(fn (array $row) => [
+                    'dataset_id' => $dataset->id,
+                    'row_index' => $row['row_index'],
+                    'payload' => json_encode($row['payload'], JSON_UNESCAPED_UNICODE),
+                    'created_at' => $timestamp,
+                    'updated_at' => $timestamp,
+                ], $chunk);
+
+                DB::table('dataset_rows')->insert($records);
+            }
 
             return $dataset;
         });

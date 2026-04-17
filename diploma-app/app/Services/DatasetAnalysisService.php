@@ -5,11 +5,10 @@ namespace App\Services;
 use App\Models\CheckRun;
 use App\Models\Dataset;
 use App\Models\DatasetRow;
-use App\Models\DuplicateCandidate;
-use App\Models\Issue;
 use App\Models\QualityRule;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -17,30 +16,56 @@ class DatasetAnalysisService
 {
     public function analyze(Dataset $dataset, string $triggerSource = 'manual'): CheckRun
     {
-        $dataset->loadMissing('activeRows');
+        @set_time_limit(0);
 
         $dataset->issues()->delete();
         $dataset->duplicateCandidates()->delete();
 
-        $rows = $dataset->activeRows()->orderBy('row_index')->get();
         $rules = $this->resolveRules();
 
         $checkRun = $dataset->checkRuns()->create([
             'status' => 'running',
             'trigger_source' => $triggerSource,
-            'total_rows' => $rows->count(),
+            'total_rows' => $dataset->activeRows()->count(),
             'started_at' => now(),
         ]);
 
         $issuesCount = 0;
+        $duplicateGroups = [];
 
-        foreach ($rows as $row) {
-            $issuesCount += $this->detectMissingValues($dataset, $checkRun, $row);
-            $issuesCount += $this->detectRegexIssues($dataset, $checkRun, $row, $rules);
-            $this->refreshFingerprint($row);
-        }
+        $dataset->activeRows()
+            ->orderBy('row_index')
+            ->chunk(500, function (Collection $rows) use ($dataset, $checkRun, $rules, &$issuesCount, &$duplicateGroups) {
+                $issueBatch = [];
+                $fingerprintUpdates = [];
 
-        $duplicatePairsCount = $this->detectDuplicates($dataset, $checkRun, $rows);
+                foreach ($rows as $row) {
+                    $issueBatch = [
+                        ...$issueBatch,
+                        ...$this->buildMissingValueIssues($dataset, $checkRun, $row),
+                        ...$this->buildRegexIssues($dataset, $checkRun, $row, $rules),
+                    ];
+
+                    $fingerprint = $this->buildFingerprint($row->payload);
+                    $fingerprintUpdates[] = [
+                        'id' => $row->id,
+                        'fingerprint' => $fingerprint,
+                    ];
+
+                    if ($fingerprint) {
+                        $duplicateGroups[$fingerprint][] = $row->id;
+                    }
+                }
+
+                if ($issueBatch !== []) {
+                    DB::table('issues')->insert($issueBatch);
+                    $issuesCount += count($issueBatch);
+                }
+
+                $this->persistFingerprints($fingerprintUpdates);
+            });
+
+        $duplicatePairsCount = $this->insertDuplicateCandidates($dataset, $checkRun, $duplicateGroups);
 
         $checkRun->update([
             'status' => 'completed',
@@ -163,19 +188,16 @@ class DatasetAnalysisService
         ];
     }
 
-    private function detectMissingValues(Dataset $dataset, CheckRun $checkRun, DatasetRow $row): int
+    private function buildMissingValueIssues(Dataset $dataset, CheckRun $checkRun, DatasetRow $row): array
     {
-        $created = 0;
+        $issues = [];
 
         foreach ($row->payload as $column => $value) {
             if ($value !== null && trim((string) $value) !== '') {
                 continue;
             }
 
-            Issue::create([
-                'dataset_id' => $dataset->id,
-                'check_run_id' => $checkRun->id,
-                'dataset_row_id' => $row->id,
+            $issues[] = $this->makeIssueRecord($dataset, $checkRun, $row, [
                 'column_name' => $column,
                 'issue_type' => 'missing_value',
                 'severity' => 'medium',
@@ -183,19 +205,15 @@ class DatasetAnalysisService
                 'message' => "В колонке \"{$column}\" отсутствует значение.",
                 'original_value' => '',
                 'suggested_value' => null,
-                'suggestion_source' => 'regex',
-                'meta' => ['row_index' => $row->row_index],
             ]);
-
-            $created++;
         }
 
-        return $created;
+        return $issues;
     }
 
-    private function detectRegexIssues(Dataset $dataset, CheckRun $checkRun, DatasetRow $row, Collection $rules): int
+    private function buildRegexIssues(Dataset $dataset, CheckRun $checkRun, DatasetRow $row, Collection $rules): array
     {
-        $created = 0;
+        $issues = [];
 
         foreach ($row->payload as $column => $value) {
             $value = trim((string) $value);
@@ -215,10 +233,7 @@ class DatasetAnalysisService
                     continue;
                 }
 
-                Issue::create([
-                    'dataset_id' => $dataset->id,
-                    'check_run_id' => $checkRun->id,
-                    'dataset_row_id' => $row->id,
+                $issues[] = $this->makeIssueRecord($dataset, $checkRun, $row, [
                     'column_name' => $column,
                     'issue_type' => data_get($rule, 'issue_type', 'invalid_format'),
                     'severity' => data_get($rule, 'severity', 'medium'),
@@ -226,66 +241,85 @@ class DatasetAnalysisService
                     'message' => data_get($rule, 'description') ?: "Проверка не прошла для колонки \"{$column}\".",
                     'original_value' => $value,
                     'suggested_value' => $this->buildSuggestion((string) data_get($rule, 'name'), $value),
-                    'suggestion_source' => 'regex',
-                    'meta' => ['row_index' => $row->row_index],
                 ]);
-
-                $created++;
             }
         }
 
-        return $created;
+        return $issues;
     }
 
-    private function detectDuplicates(Dataset $dataset, CheckRun $checkRun, Collection $rows): int
+    private function insertDuplicateCandidates(Dataset $dataset, CheckRun $checkRun, array $duplicateGroups): int
     {
-        $groups = [];
-
-        foreach ($rows as $row) {
-            if (! $row->fingerprint) {
-                continue;
-            }
-
-            $groups[$row->fingerprint][] = $row;
-        }
-
         $created = 0;
+        $timestamp = now();
+        $records = [];
 
-        foreach ($groups as $group) {
+        foreach ($duplicateGroups as $group) {
             if (count($group) < 2) {
                 continue;
             }
 
-            $primaryRow = $group[0];
+            $primaryRowId = $group[0];
 
-            foreach (array_slice($group, 1) as $duplicateRow) {
-                DuplicateCandidate::create([
+            foreach (array_slice($group, 1) as $duplicateRowId) {
+                $records[] = [
                     'dataset_id' => $dataset->id,
                     'check_run_id' => $checkRun->id,
-                    'primary_row_id' => $primaryRow->id,
-                    'duplicate_row_id' => $duplicateRow->id,
+                    'primary_row_id' => $primaryRowId,
+                    'duplicate_row_id' => $duplicateRowId,
                     'confidence' => 1.00,
                     'rationale' => 'Совпадает нормализованный отпечаток строки.',
-                ]);
+                    'status' => 'open',
+                    'created_at' => $timestamp,
+                    'updated_at' => $timestamp,
+                ];
 
                 $created++;
             }
         }
 
+        foreach (array_chunk($records, 500) as $chunk) {
+            DB::table('duplicate_candidates')->insert($chunk);
+        }
+
         return $created;
     }
 
-    private function refreshFingerprint(DatasetRow $row): void
+    private function buildFingerprint(array $payload): ?string
     {
-        $values = collect($row->payload)
+        $values = collect($payload)
             ->map(fn (mixed $value) => Str::of((string) $value)->trim()->lower()->replaceMatches('/\s+/u', ' ')->value())
             ->filter()
             ->values()
             ->all();
 
-        $row->update([
-            'fingerprint' => $values === [] ? null : sha1(implode('|', $values)),
-        ]);
+        return $values === [] ? null : sha1(implode('|', $values));
+    }
+
+    private function persistFingerprints(array $fingerprintUpdates): void
+    {
+        if ($fingerprintUpdates === []) {
+            return;
+        }
+
+        $pdo = DB::connection()->getPdo();
+        $cases = [];
+        $ids = [];
+        $timestamp = now()->toDateTimeString();
+
+        foreach ($fingerprintUpdates as $update) {
+            $id = (int) $update['id'];
+            $ids[] = $id;
+            $fingerprint = $update['fingerprint'];
+            $quotedFingerprint = $fingerprint === null ? 'NULL' : $pdo->quote($fingerprint);
+            $cases[] = "WHEN {$id} THEN {$quotedFingerprint}";
+        }
+
+        $idList = implode(',', $ids);
+        $quotedTimestamp = $pdo->quote($timestamp);
+        $sql = "UPDATE dataset_rows SET fingerprint = CASE id ".implode(' ', $cases)." END, updated_at = {$quotedTimestamp} WHERE id IN ({$idList})";
+
+        DB::statement($sql);
     }
 
     private function ruleMatchesColumn(array $rule, string $column): bool
@@ -381,5 +415,28 @@ class DatasetAnalysisService
         $normalized = Str::lower(trim($value));
 
         return in_array($normalized, ['active', 'inactive', 'pending'], true) ? $normalized : null;
+    }
+
+    private function makeIssueRecord(Dataset $dataset, CheckRun $checkRun, DatasetRow $row, array $attributes): array
+    {
+        $timestamp = now();
+
+        return [
+            'dataset_id' => $dataset->id,
+            'check_run_id' => $checkRun->id,
+            'dataset_row_id' => $row->id,
+            'column_name' => $attributes['column_name'] ?? null,
+            'issue_type' => $attributes['issue_type'] ?? 'invalid_format',
+            'severity' => $attributes['severity'] ?? 'medium',
+            'title' => $attributes['title'] ?? 'Format rule',
+            'message' => $attributes['message'] ?? '',
+            'original_value' => $attributes['original_value'] ?? null,
+            'suggested_value' => $attributes['suggested_value'] ?? null,
+            'suggestion_source' => 'regex',
+            'status' => 'open',
+            'meta' => json_encode(['row_index' => $row->row_index], JSON_UNESCAPED_UNICODE),
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ];
     }
 }
