@@ -1,22 +1,10 @@
 <x-layout :title="$dataset->name" current="datasets">
     <div class="space-y-8">
         <div class="metric-grid">
-            <div class="metric-card">
-                <div class="metric-label">Строк</div>
-                <div class="metric-value">{{ $dataset->total_rows }}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Открытые инциденты</div>
-                <div class="metric-value">{{ data_get($dataset->metrics, 'open_issues', 0) }}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Открытые дубликаты</div>
-                <div class="metric-value">{{ data_get($dataset->metrics, 'open_duplicates', 0) }}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Completeness rate</div>
-                <div class="metric-value text-3xl">{{ data_get($dataset->metrics, 'completeness_rate', 0) }}%</div>
-            </div>
+            <x-metric-card label="Строк" :value="$dataset->total_rows" />
+            <x-metric-card label="Открытые инциденты" :value="data_get($dataset->metrics, 'open_issues', 0)" />
+            <x-metric-card label="Открытые дубликаты" :value="data_get($dataset->metrics, 'open_duplicates', 0)" />
+            <x-metric-card label="Completeness rate" :value="data_get($dataset->metrics, 'completeness_rate', 0).'%'"/>
         </div>
 
         <div class="grid gap-8 xl:grid-cols-[1.15fr_0.85fr]">
@@ -28,28 +16,17 @@
                             {{ $dataset->description ?: 'Описание не добавлено. Этот набор уже загружен и доступен для регулярных проверок.' }}
                         </p>
                     </div>
-                    <span class="status-pill {{ $dataset->review_status === 'clean' ? 'status-clean' : 'status-review' }}">
+
+                    <x-status-pill :tone="$dataset->review_status === 'clean' ? 'clean' : 'review'">
                         {{ $dataset->review_status === 'clean' ? 'Чистый набор' : 'Требует разбора' }}
-                    </span>
+                    </x-status-pill>
                 </div>
 
                 <dl class="mt-8 grid gap-4 md:grid-cols-2">
-                    <div class="mini-stat">
-                        <span>Исходный файл</span>
-                        <strong>{{ $dataset->source_filename }}</strong>
-                    </div>
-                    <div class="mini-stat">
-                        <span>Последняя проверка</span>
-                        <strong>{{ optional($dataset->last_checked_at)->format('d.m.Y H:i') ?: 'Еще не запускалась' }}</strong>
-                    </div>
-                    <div class="mini-stat">
-                        <span>Format error rate</span>
-                        <strong>{{ data_get($dataset->metrics, 'format_error_rate', 0) }}%</strong>
-                    </div>
-                    <div class="mini-stat">
-                        <span>DeepSeek этап</span>
-                        <strong>{{ data_get($dataset->metrics, 'deepseek_stage_ready', false) ? 'Можно запускать' : 'Сначала regex' }}</strong>
-                    </div>
+                    <x-mini-stat label="Исходный файл" :value="$dataset->source_filename" />
+                    <x-mini-stat label="Последняя проверка" :value="optional($dataset->last_checked_at)->format('d.m.Y H:i') ?: 'Еще не запускалась'" />
+                    <x-mini-stat label="Format error rate" :value="data_get($dataset->metrics, 'format_error_rate', 0).'%'"/>
+                    <x-mini-stat label="DeepSeek этап" :value="data_get($dataset->metrics, 'deepseek_stage_ready', false) ? 'Можно запускать' : 'Сначала regex'" />
                 </dl>
 
                 <div class="mt-8 flex flex-wrap gap-4">
@@ -84,71 +61,67 @@
         </div>
 
         <section class="panel">
-            <div class="flex items-center justify-between gap-4">
-                <h2 class="panel-title">Последние инциденты</h2>
+            <x-section-header title="Последние инциденты">
                 <a href="/issues" class="secondary-button">Все инциденты</a>
-            </div>
-            <div class="mt-6 overflow-x-auto">
-                <table class="data-table">
-                    <thead>
+            </x-section-header>
+
+            <x-data-table class="mt-6">
+                <thead>
+                    <tr>
+                        <th>Колонка</th>
+                        <th>Тип</th>
+                        <th>Значение</th>
+                        <th>Предложение</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($dataset->issues as $issue)
                         <tr>
-                            <th>Колонка</th>
-                            <th>Тип</th>
-                            <th>Значение</th>
-                            <th>Предложение</th>
-                            <th>Статус</th>
+                            <td>{{ $issue->column_name ?: 'Строка' }}</td>
+                            <td>{{ $issue->title }}</td>
+                            <td>{{ $issue->original_value ?: 'Пусто' }}</td>
+                            <td>{{ $issue->suggested_value ?: 'Нет безопасного исправления' }}</td>
+                            <td>{{ $issue->status }}</td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($dataset->issues as $issue)
-                            <tr>
-                                <td>{{ $issue->column_name ?: 'Строка' }}</td>
-                                <td>{{ $issue->title }}</td>
-                                <td>{{ $issue->original_value ?: 'Пусто' }}</td>
-                                <td>{{ $issue->suggested_value ?: 'Нет безопасного исправления' }}</td>
-                                <td>{{ $issue->status }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="text-center text-slate-500">Инцидентов пока нет.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="text-center text-slate-500">Инцидентов пока нет.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </x-data-table>
         </section>
 
         <section class="panel">
-            <div class="flex items-center justify-between gap-4">
-                <h2 class="panel-title">Последние дубликаты</h2>
+            <x-section-header title="Последние дубликаты">
                 <a href="/duplicates" class="secondary-button">Все дубликаты</a>
-            </div>
-            <div class="mt-6 overflow-x-auto">
-                <table class="data-table">
-                    <thead>
+            </x-section-header>
+
+            <x-data-table class="mt-6">
+                <thead>
+                    <tr>
+                        <th>Базовая строка</th>
+                        <th>Дубликат</th>
+                        <th>Уверенность</th>
+                        <th>Причина</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($dataset->duplicateCandidates as $duplicate)
                         <tr>
-                            <th>Базовая строка</th>
-                            <th>Дубликат</th>
-                            <th>Уверенность</th>
-                            <th>Причина</th>
+                            <td>#{{ $duplicate->primaryRow->row_index }}</td>
+                            <td>#{{ $duplicate->duplicateRow->row_index }}</td>
+                            <td>{{ number_format($duplicate->confidence * 100, 0) }}%</td>
+                            <td>{{ $duplicate->rationale }}</td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($dataset->duplicateCandidates as $duplicate)
-                            <tr>
-                                <td>#{{ $duplicate->primaryRow->row_index }}</td>
-                                <td>#{{ $duplicate->duplicateRow->row_index }}</td>
-                                <td>{{ number_format($duplicate->confidence * 100, 0) }}%</td>
-                                <td>{{ $duplicate->rationale }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="text-center text-slate-500">Дубликаты не найдены.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                    @empty
+                        <tr>
+                            <td colspan="4" class="text-center text-slate-500">Дубликаты не найдены.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </x-data-table>
         </section>
     </div>
 </x-layout>

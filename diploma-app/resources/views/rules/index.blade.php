@@ -1,15 +1,14 @@
 <x-layout title="Regex-правила" current="rules">
     <div class="space-y-8">
         <section class="panel">
-            <h2 class="panel-title">Активные правила качества</h2>
-            <p class="mt-4 text-lg leading-8 text-slate-700">
-                На первом этапе сайт опирается на regex и предсказуемые нормализаторы. Это безопасный слой,
-                который исправляет очевидные ошибки до передачи оставшихся спорных случаев в DeepSeek API.
-            </p>
+            <x-section-header
+                title="Активные правила качества"
+                description="На первом этапе сайт опирается на regex и предсказуемые нормализаторы. Это безопасный слой, который исправляет очевидные ошибки до передачи оставшихся спорных случаев в DeepSeek API."
+            />
         </section>
 
-        <div class="overflow-x-auto panel">
-            <table class="data-table">
+        <div class="panel">
+            <x-data-table>
                 <thead>
                     <tr>
                         <th>Правило</th>
@@ -30,7 +29,7 @@
                         </tr>
                     @endforeach
                 </tbody>
-            </table>
+            </x-data-table>
         </div>
     </div>
 </x-layout>

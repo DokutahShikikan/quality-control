@@ -33,22 +33,10 @@
         </div>
 
         <div class="metric-grid">
-            <div class="metric-card">
-                <div class="metric-label">Всего наборов</div>
-                <div class="metric-value">{{ $metrics['datasets'] }}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Открытые инциденты</div>
-                <div class="metric-value">{{ $metrics['open_issues'] }}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Кандидаты в дубликаты</div>
-                <div class="metric-value">{{ $metrics['open_duplicates'] }}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Готово к AI-этапу</div>
-                <div class="metric-value">{{ $metrics['ready_for_ai'] }}</div>
-            </div>
+            <x-metric-card label="Всего наборов" :value="$metrics['datasets']" />
+            <x-metric-card label="Открытые инциденты" :value="$metrics['open_issues']" />
+            <x-metric-card label="Кандидаты в дубликаты" :value="$metrics['open_duplicates']" />
+            <x-metric-card label="Готово к AI-этапу" :value="$metrics['ready_for_ai']" />
         </div>
 
         @if($datasets->isNotEmpty())
@@ -58,16 +46,13 @@
                 @endforeach
             </div>
         @else
-            <div class="panel max-w-4xl">
-                <h2 class="panel-title">Наборы пока не загружены</h2>
-                <p class="mt-4 text-base leading-8 text-slate-600 md:text-lg">
-                    Начни с импорта файла. Поддерживаются CSV и базовый XLSX. После загрузки набор автоматически проходит
-                    первичную проверку и появляется в панели для последующего разбора.
-                </p>
-                <div class="mt-8">
-                    <a href="/datasets/create" class="primary-button">Загрузить первый файл</a>
-                </div>
-            </div>
+            <x-empty-state
+                class="max-w-4xl"
+                title="Наборы пока не загружены"
+                description="Начни с импорта файла. Поддерживаются CSV и базовый XLSX. После загрузки набор автоматически проходит первичную проверку и появляется в панели для последующего разбора."
+            >
+                <a href="/datasets/create" class="primary-button">Загрузить первый файл</a>
+            </x-empty-state>
         @endif
     </section>
 </x-layout>

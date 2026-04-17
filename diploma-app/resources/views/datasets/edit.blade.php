@@ -1,22 +1,23 @@
 <x-layout title="Редактирование набора" current="datasets">
     <div class="space-y-8">
         <div class="panel">
-            <h2 class="panel-title">Редактирование набора</h2>
+            <x-section-header title="Редактирование набора" />
+
             <form method="POST" action="/datasets/{{$dataset->id}}" class="mt-8 space-y-6">
                 @csrf
                 @method('PATCH')
 
-                <div class="form-field">
-                    <label for="description" class="form-label">Описание набора и сценария автоисправления</label>
-                    <textarea id="description" name="description" rows="5" class="text-area">{{ trim($dataset->description) }}</textarea>
-                    <x-forms.error name="description"/>
-                </div>
+                <x-forms.textarea-field
+                    name="description"
+                    label="Описание набора и сценария автоисправления"
+                    :value="trim($dataset->description)"
+                />
 
-                <div class="flex flex-wrap gap-4">
+                <x-form-actions>
                     <button type="submit" class="primary-button">Сохранить изменения</button>
                     <button type="submit" form="delete-dataset-form" class="danger-button">Удалить набор</button>
                     <a href="/datasets/{{$dataset->id}}" class="secondary-button">Назад</a>
-                </div>
+                </x-form-actions>
             </form>
         </div>
 

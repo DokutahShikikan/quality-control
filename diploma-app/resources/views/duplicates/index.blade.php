@@ -1,6 +1,6 @@
 <x-layout title="Кандидаты в дубликаты" current="duplicates">
-    <div class="panel overflow-x-auto">
-        <table class="data-table">
+    <div class="panel">
+        <x-data-table>
             <thead>
                 <tr>
                     <th>Набор</th>
@@ -40,6 +40,6 @@
                     </tr>
                 @endforelse
             </tbody>
-        </table>
+        </x-data-table>
     </div>
 </x-layout>
