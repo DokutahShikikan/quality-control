@@ -7,6 +7,7 @@ use App\Models\Dataset;
 use App\Services\DatasetAnalysisService;
 use App\Services\SpreadsheetImportService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -14,10 +15,29 @@ use Throwable;
 
 class DatasetController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $datasetsQuery = Auth::user()->datasets()->latest();
-        $allDatasets = (clone $datasetsQuery)->get();
+        $userDatasetIds = Auth::user()->datasets()->pluck('id');
+        $datasetsBaseQuery = Dataset::query()->whereIn('id', $userDatasetIds);
+        $allDatasets = (clone $datasetsBaseQuery)->get();
+
+        $datasetsQuery = (clone $datasetsBaseQuery)
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $term = trim((string) $request->string('q'));
+                $query->where(function ($inner) use ($term) {
+                    $inner->where('name', 'like', "%{$term}%")
+                        ->orWhere('description', 'like', "%{$term}%")
+                        ->orWhere('source_filename', 'like', "%{$term}%");
+                });
+            })
+            ->when($request->filled('review_status'), fn ($query) => $query->where('review_status', $request->string('review_status')->value()));
+
+        match ($request->string('sort')->value()) {
+            'oldest' => $datasetsQuery->oldest(),
+            'most_issues' => $datasetsQuery->orderByDesc('updated_at'),
+            default => $datasetsQuery->latest(),
+        };
+
         $datasets = $datasetsQuery->paginate(12)->withQueryString();
 
         $metrics = [
@@ -32,6 +52,7 @@ class DatasetController extends Controller
         return view('datasets.index', [
             'datasets' => $datasets,
             'metrics' => $metrics,
+            'filters' => $request->only(['q', 'review_status', 'sort']),
         ]);
     }
 

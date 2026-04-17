@@ -39,6 +39,40 @@
             <x-metric-card label="Готово к AI-этапу" :value="$metrics['ready_for_ai']" />
         </div>
 
+        <div class="panel">
+            <form method="GET" action="/datasets" class="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_220px_220px_auto]">
+                <x-forms.input-field
+                    name="q"
+                    label="Поиск"
+                    :value="$filters['q'] ?? ''"
+                    placeholder="Название, описание или имя файла"
+                />
+
+                <label class="form-field">
+                    <span class="form-label">Статус набора</span>
+                    <select name="review_status" class="text-field">
+                        <option value="">Все</option>
+                        <option value="needs_review" @selected(($filters['review_status'] ?? '') === 'needs_review')>Требует разбора</option>
+                        <option value="clean" @selected(($filters['review_status'] ?? '') === 'clean')>Чистый</option>
+                    </select>
+                </label>
+
+                <label class="form-field">
+                    <span class="form-label">Сортировка</span>
+                    <select name="sort" class="text-field">
+                        <option value="newest" @selected(($filters['sort'] ?? '') === 'newest')>Сначала новые</option>
+                        <option value="oldest" @selected(($filters['sort'] ?? '') === 'oldest')>Сначала старые</option>
+                        <option value="most_issues" @selected(($filters['sort'] ?? '') === 'most_issues')>Недавно обновленные</option>
+                    </select>
+                </label>
+
+                <x-form-actions class="items-end">
+                    <button type="submit" class="primary-button">Применить</button>
+                    <a href="/datasets" class="secondary-button">Сбросить</a>
+                </x-form-actions>
+            </form>
+        </div>
+
         @if($datasets->isNotEmpty())
             <div class="flex items-center justify-between gap-4">
                 <p class="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
@@ -61,10 +95,10 @@
         @else
             <x-empty-state
                 class="max-w-4xl"
-                title="Наборы пока не загружены"
-                description="Начни с импорта файла. Поддерживаются CSV и базовый XLSX. После загрузки набор автоматически проходит первичную проверку и появляется в панели для последующего разбора."
+                title="Наборы не найдены"
+                description="Попробуй изменить параметры поиска или загрузить новый файл для анализа."
             >
-                <a href="/datasets/create" class="primary-button">Загрузить первый файл</a>
+                <a href="/datasets/create" class="primary-button">Загрузить файл</a>
             </x-empty-state>
         @endif
     </section>
