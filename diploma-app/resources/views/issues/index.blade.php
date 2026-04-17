@@ -1,55 +1,58 @@
 <x-layout title="Инциденты качества" current="issues">
     <div class="space-y-6">
         <div class="panel">
-            <form method="GET" action="/issues" class="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_180px_180px_180px_220px_auto]">
-                <x-forms.input-field
-                    name="q"
-                    label="Поиск"
-                    :value="$filters['q'] ?? ''"
-                    placeholder="Набор, колонка, значение, текст ошибки"
-                />
+            <form method="GET" action="/issues" class="space-y-4">
+                <div class="grid gap-4 md:grid-cols-2 2xl:grid-cols-5">
+                    <x-forms.input-field
+                        class="md:col-span-2 2xl:col-span-1"
+                        name="q"
+                        label="Поиск"
+                        :value="$filters['q'] ?? ''"
+                        placeholder="Набор, колонка, значение, текст ошибки"
+                    />
 
-                <label class="form-field">
-                    <span class="form-label">Статус</span>
-                    <select name="status" class="text-field">
-                        <option value="">Все</option>
-                        @foreach(['open' => 'Открыт', 'fixed' => 'Исправлен', 'ignored' => 'Игнорирован'] as $value => $label)
-                            <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </label>
+                    <label class="form-field">
+                        <span class="form-label">Статус</span>
+                        <select name="status" class="text-field">
+                            <option value="">Все</option>
+                            @foreach(['open' => 'Открыт', 'fixed' => 'Исправлен', 'ignored' => 'Игнорирован'] as $value => $label)
+                                <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </label>
 
-                <label class="form-field">
-                    <span class="form-label">Тип</span>
-                    <select name="issue_type" class="text-field">
-                        <option value="">Все</option>
-                        @foreach(['missing_value' => 'Пустые значения', 'invalid_format' => 'Неверный формат'] as $value => $label)
-                            <option value="{{ $value }}" @selected(($filters['issue_type'] ?? '') === $value)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </label>
+                    <label class="form-field">
+                        <span class="form-label">Тип</span>
+                        <select name="issue_type" class="text-field">
+                            <option value="">Все</option>
+                            @foreach(['missing_value' => 'Пустые значения', 'invalid_format' => 'Неверный формат'] as $value => $label)
+                                <option value="{{ $value }}" @selected(($filters['issue_type'] ?? '') === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </label>
 
-                <label class="form-field">
-                    <span class="form-label">Критичность</span>
-                    <select name="severity" class="text-field">
-                        <option value="">Все</option>
-                        @foreach(['high' => 'Высокая', 'medium' => 'Средняя', 'low' => 'Низкая'] as $value => $label)
-                            <option value="{{ $value }}" @selected(($filters['severity'] ?? '') === $value)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </label>
+                    <label class="form-field">
+                        <span class="form-label">Критичность</span>
+                        <select name="severity" class="text-field">
+                            <option value="">Все</option>
+                            @foreach(['high' => 'Высокая', 'medium' => 'Средняя', 'low' => 'Низкая'] as $value => $label)
+                                <option value="{{ $value }}" @selected(($filters['severity'] ?? '') === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </label>
 
-                <label class="form-field">
-                    <span class="form-label">Сортировка</span>
-                    <select name="sort" class="text-field">
-                        <option value="newest" @selected(($filters['sort'] ?? '') === 'newest')>Сначала новые</option>
-                        <option value="oldest" @selected(($filters['sort'] ?? '') === 'oldest')>Сначала старые</option>
-                        <option value="severity" @selected(($filters['sort'] ?? '') === 'severity')>По критичности</option>
-                        <option value="status" @selected(($filters['sort'] ?? '') === 'status')>По статусу</option>
-                    </select>
-                </label>
+                    <label class="form-field">
+                        <span class="form-label">Сортировка</span>
+                        <select name="sort" class="text-field">
+                            <option value="newest" @selected(($filters['sort'] ?? '') === 'newest')>Сначала новые</option>
+                            <option value="oldest" @selected(($filters['sort'] ?? '') === 'oldest')>Сначала старые</option>
+                            <option value="severity" @selected(($filters['sort'] ?? '') === 'severity')>По критичности</option>
+                            <option value="status" @selected(($filters['sort'] ?? '') === 'status')>По статусу</option>
+                        </select>
+                    </label>
+                </div>
 
-                <x-form-actions class="items-end">
+                <x-form-actions>
                     <button type="submit" class="primary-button">Применить</button>
                     <a href="/issues" class="secondary-button">Сбросить</a>
                 </x-form-actions>
