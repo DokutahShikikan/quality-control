@@ -20,11 +20,21 @@
                 </thead>
                 <tbody>
                     @foreach($rules as $rule)
+                        @php
+                            $columnHints = $rule->column_hints;
+
+                            if (is_string($columnHints)) {
+                                $decodedHints = json_decode($columnHints, true);
+                                $columnHints = is_array($decodedHints) ? $decodedHints : [$columnHints];
+                            }
+
+                            $columnHints = is_array($columnHints) ? $columnHints : [];
+                        @endphp
                         <tr>
                             <td>{{ $rule->name }}</td>
                             <td>{{ $rule->issue_type }}</td>
                             <td>{{ $rule->severity }}</td>
-                            <td>{{ implode(', ', $rule->column_hints ?? []) }}</td>
+                            <td>{{ implode(', ', $columnHints) }}</td>
                             <td>{{ $rule->description }}</td>
                         </tr>
                     @endforeach
