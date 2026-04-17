@@ -1,5 +1,16 @@
 <x-layout title="Инциденты качества" current="issues">
     <div class="panel">
+        @if($issues->total() > 0)
+            <div class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p class="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    Страница {{ $issues->currentPage() }} из {{ $issues->lastPage() }}
+                </p>
+                <p class="text-sm text-slate-500">
+                    Показано {{ $issues->firstItem() }}-{{ $issues->lastItem() }} из {{ $issues->total() }}
+                </p>
+            </div>
+        @endif
+
         <x-data-table>
             <thead>
                 <tr>
@@ -43,5 +54,11 @@
                 @endforelse
             </tbody>
         </x-data-table>
+
+        @if($issues->total() > 0)
+            <div class="mt-6">
+                {{ $issues->onEachSide(1)->links() }}
+            </div>
+        @endif
     </div>
 </x-layout>

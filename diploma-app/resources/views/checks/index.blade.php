@@ -1,5 +1,16 @@
 <x-layout title="Запуски проверок" current="checks">
     <div class="panel">
+        @if($runs->total() > 0)
+            <div class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p class="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    Страница {{ $runs->currentPage() }} из {{ $runs->lastPage() }}
+                </p>
+                <p class="text-sm text-slate-500">
+                    Показано {{ $runs->firstItem() }}-{{ $runs->lastItem() }} из {{ $runs->total() }}
+                </p>
+            </div>
+        @endif
+
         <x-data-table>
             <thead>
                 <tr>
@@ -30,5 +41,11 @@
                 @endforelse
             </tbody>
         </x-data-table>
+
+        @if($runs->total() > 0)
+            <div class="mt-6">
+                {{ $runs->onEachSide(1)->links() }}
+            </div>
+        @endif
     </div>
 </x-layout>

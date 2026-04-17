@@ -40,10 +40,23 @@
         </div>
 
         @if($datasets->isNotEmpty())
+            <div class="flex items-center justify-between gap-4">
+                <p class="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    Страница {{ $datasets->currentPage() }} из {{ $datasets->lastPage() }}
+                </p>
+                <p class="text-sm text-slate-500">
+                    Показано {{ $datasets->firstItem() }}-{{ $datasets->lastItem() }} из {{ $datasets->total() }}
+                </p>
+            </div>
+
             <div class="grid grid-cols-1 gap-6 2xl:grid-cols-2">
                 @foreach($datasets as $dataset)
                     <x-dataset-card :dataset="$dataset" />
                 @endforeach
+            </div>
+
+            <div>
+                {{ $datasets->onEachSide(1)->links() }}
             </div>
         @else
             <x-empty-state

@@ -16,7 +16,8 @@ class IssueController extends Controller
             ->whereIn('dataset_id', Auth::user()->datasets()->pluck('id'))
             ->with(['dataset', 'datasetRow'])
             ->latest()
-            ->get();
+            ->paginate(50)
+            ->withQueryString();
 
         return view('issues.index', ['issues' => $issues]);
     }
@@ -37,7 +38,7 @@ class IssueController extends Controller
 
         $analysisService->analyze($issue->dataset, 'regex_fix');
 
-        return redirect('/issues')->with('success', 'Значение исправлено и набор перепроверен.');
+        return back()->with('success', 'Значение исправлено и набор перепроверен.');
     }
 
     public function ignore(Issue $issue, DatasetAnalysisService $analysisService): RedirectResponse
@@ -47,6 +48,6 @@ class IssueController extends Controller
         $issue->update(['status' => 'ignored']);
         $analysisService->refreshDatasetSummary($issue->dataset);
 
-        return redirect('/issues')->with('success', 'Инцидент помечен как проигнорированный.');
+        return back()->with('success', 'Инцидент помечен как проигнорированный.');
     }
 }

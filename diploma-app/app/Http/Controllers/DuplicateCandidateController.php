@@ -16,7 +16,8 @@ class DuplicateCandidateController extends Controller
             ->whereIn('dataset_id', Auth::user()->datasets()->pluck('id'))
             ->with(['dataset', 'primaryRow', 'duplicateRow'])
             ->latest()
-            ->get();
+            ->paginate(50)
+            ->withQueryString();
 
         return view('duplicates.index', ['duplicates' => $duplicates]);
     }
@@ -30,7 +31,7 @@ class DuplicateCandidateController extends Controller
 
         $analysisService->analyze($duplicateCandidate->dataset, 'duplicate_resolution');
 
-        return redirect('/duplicates')->with('success', 'Дубликат исключен из активного набора и проверка перезапущена.');
+        return back()->with('success', 'Дубликат исключен из активного набора и проверка перезапущена.');
     }
 
     public function ignore(DuplicateCandidate $duplicateCandidate, DatasetAnalysisService $analysisService): RedirectResponse
@@ -40,6 +41,6 @@ class DuplicateCandidateController extends Controller
         $duplicateCandidate->update(['status' => 'ignored']);
         $analysisService->refreshDatasetSummary($duplicateCandidate->dataset);
 
-        return redirect('/duplicates')->with('success', 'Кандидат в дубликаты проигнорирован.');
+        return back()->with('success', 'Кандидат в дубликаты проигнорирован.');
     }
 }

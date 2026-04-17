@@ -1,5 +1,16 @@
 <x-layout title="Кандидаты в дубликаты" current="duplicates">
     <div class="panel">
+        @if($duplicates->total() > 0)
+            <div class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p class="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    Страница {{ $duplicates->currentPage() }} из {{ $duplicates->lastPage() }}
+                </p>
+                <p class="text-sm text-slate-500">
+                    Показано {{ $duplicates->firstItem() }}-{{ $duplicates->lastItem() }} из {{ $duplicates->total() }}
+                </p>
+            </div>
+        @endif
+
         <x-data-table>
             <thead>
                 <tr>
@@ -41,5 +52,11 @@
                 @endforelse
             </tbody>
         </x-data-table>
+
+        @if($duplicates->total() > 0)
+            <div class="mt-6">
+                {{ $duplicates->onEachSide(1)->links() }}
+            </div>
+        @endif
     </div>
 </x-layout>

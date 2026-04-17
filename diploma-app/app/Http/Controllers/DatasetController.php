@@ -16,12 +16,15 @@ class DatasetController extends Controller
 {
     public function index()
     {
-        $datasets = Auth::user()->datasets()->latest()->get();
+        $datasetsQuery = Auth::user()->datasets()->latest();
+        $allDatasets = (clone $datasetsQuery)->get();
+        $datasets = $datasetsQuery->paginate(12)->withQueryString();
+
         $metrics = [
-            'datasets' => $datasets->count(),
-            'open_issues' => $datasets->sum(fn (Dataset $dataset) => data_get($dataset->metrics, 'open_issues', 0)),
-            'open_duplicates' => $datasets->sum(fn (Dataset $dataset) => data_get($dataset->metrics, 'open_duplicates', 0)),
-            'ready_for_ai' => $datasets->filter(
+            'datasets' => $allDatasets->count(),
+            'open_issues' => $allDatasets->sum(fn (Dataset $dataset) => data_get($dataset->metrics, 'open_issues', 0)),
+            'open_duplicates' => $allDatasets->sum(fn (Dataset $dataset) => data_get($dataset->metrics, 'open_duplicates', 0)),
+            'ready_for_ai' => $allDatasets->filter(
                 fn (Dataset $dataset) => data_get($dataset->metrics, 'deepseek_stage_ready', false)
             )->count(),
         ];
