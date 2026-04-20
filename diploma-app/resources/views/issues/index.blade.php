@@ -87,9 +87,8 @@
                 <tbody>
                     @forelse($issues as $issue)
                         @php
-                            $fixHint = $issue->suggested_value
-                                ? 'Сейчас: '.($issue->original_value ?: 'пусто').' | Будет: '.$issue->suggested_value
-                                : 'Для этой ошибки нет безопасного автоматического исправления';
+                            $currentValue = $issue->original_value ?: 'Пусто';
+                            $nextValue = $issue->suggested_value ?: 'Нет безопасного автоматического исправления';
                         @endphp
                         <tr>
                             <td><a href="/datasets/{{ $issue->dataset_id }}" class="link link-hover">{{ $issue->dataset->name }}</a></td>
@@ -103,13 +102,27 @@
                                 <div class="flex flex-wrap gap-2">
                                     <form method="POST" action="/issues/{{ $issue->id }}/fix">
                                         @csrf
-                                        <button
-                                            class="btn btn-sm rounded-none btn-primary"
-                                            type="submit"
-                                            title="{{ $fixHint }}"
-                                            aria-label="{{ $fixHint }}"
-                                            {{ $issue->status !== 'open' || ! $issue->suggested_value ? 'disabled' : '' }}
-                                        >Исправить</button>
+                                        <span class="tooltip-trigger">
+                                            <button
+                                                class="btn btn-sm rounded-none btn-primary"
+                                                type="submit"
+                                                aria-label="Исправить значение"
+                                                {{ $issue->status !== 'open' || ! $issue->suggested_value ? 'disabled' : '' }}
+                                            >Исправить</button>
+
+                                            @if($issue->suggested_value)
+                                                <span class="tooltip-card">
+                                                    <span class="tooltip-label">Сейчас</span>
+                                                    <span class="tooltip-value">{{ $currentValue }}</span>
+                                                    <span class="tooltip-arrow-line">
+                                                        <span>Поменяем</span>
+                                                        <span aria-hidden="true">→</span>
+                                                    </span>
+                                                    <span class="tooltip-label">Станет</span>
+                                                    <span class="tooltip-value">{{ $nextValue }}</span>
+                                                </span>
+                                            @endif
+                                        </span>
                                     </form>
                                     <form method="POST" action="/issues/{{ $issue->id }}/ignore">
                                         @csrf
