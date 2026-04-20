@@ -76,11 +76,11 @@
                                 <div class="flex flex-wrap gap-2">
                                     <form method="POST" action="/duplicates/{{ $duplicate->id }}/fix">
                                         @csrf
-                                        <button class="btn btn-sm rounded-none btn-primary" type="submit" {{ $duplicate->status !== 'open' ? 'disabled' : '' }}>Удалить дубликат</button>
+                                        <button class="btn btn-sm rounded-none btn-primary action-button" type="submit" {{ $duplicate->status !== 'open' ? 'disabled' : '' }}>Удалить дубликат</button>
                                     </form>
                                     <form method="POST" action="/duplicates/{{ $duplicate->id }}/ignore">
                                         @csrf
-                                        <button class="btn btn-sm rounded-none btn-ghost border border-slate-300" type="submit" {{ $duplicate->status !== 'open' ? 'disabled' : '' }}>Игнорировать</button>
+                                        <button class="btn btn-sm rounded-none btn-ghost border border-slate-300 action-button" type="submit" {{ $duplicate->status !== 'open' ? 'disabled' : '' }}>Игнорировать</button>
                                     </form>
                                 </div>
                             </td>

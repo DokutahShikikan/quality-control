@@ -10,11 +10,12 @@
     <body>
         <div class="app-shell">
             <header class="app-header">
-                <div>
+                <div class="app-header-copy">
                     <p class="badge badge-neutral badge-outline mb-3 rounded-full px-4 py-3">Проверка таблиц без ручной рутины</p>
                     <h1 class="app-title">{{ $title ?: 'Система проверки качества данных' }}</h1>
-                    <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-600 md:text-base">
-                        Загружайте таблицы, находите пустые ячейки, неверные форматы и повторы, а потом исправляйте их понятными действиями.
+                    <p class="app-subtitle">
+                        Загружайте таблицы, находите пустые ячейки, неверные форматы и повторы.
+                        Исправляйте найденные проблемы понятными действиями.
                     </p>
                 </div>
                 <div class="app-brand">
