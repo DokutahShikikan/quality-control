@@ -1,4 +1,19 @@
-<x-layout title="Запуски проверок" current="checks">
+<x-layout title="История таблиц" current="checks">
+    @php
+        $statusLabels = [
+            'completed' => 'Завершено',
+            'running' => 'В процессе',
+            'failed' => 'С ошибкой',
+        ];
+
+        $triggerLabels = [
+            'import' => 'После загрузки',
+            'manual' => 'Вручную',
+            'regex_fix' => 'После исправления по шаблону',
+            'duplicate_resolution' => 'После разбора повторов',
+        ];
+    @endphp
+
     <div class="space-y-6">
         <div class="panel">
             <form method="GET" action="/checks" class="space-y-4">
@@ -8,24 +23,24 @@
                         name="q"
                         label="Поиск"
                         :value="$filters['q'] ?? ''"
-                        placeholder="Набор, источник запуска или статус"
+                        placeholder="Таблица, способ запуска или состояние"
                     />
 
                     <label class="form-field">
-                        <span class="form-label">Статус</span>
+                        <span class="form-label">Состояние</span>
                         <select name="status" class="text-field">
                             <option value="">Все</option>
-                            @foreach(['completed' => 'Завершен', 'running' => 'В процессе'] as $value => $label)
+                            @foreach($statusLabels as $value => $label)
                                 <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
                     </label>
 
                     <label class="form-field">
-                        <span class="form-label">Источник</span>
+                        <span class="form-label">Как запустили</span>
                         <select name="trigger_source" class="text-field">
                             <option value="">Все</option>
-                            @foreach(['import' => 'Импорт', 'manual' => 'Ручной запуск', 'regex_fix' => 'Regex-исправление', 'duplicate_resolution' => 'Разбор дублей'] as $value => $label)
+                            @foreach($triggerLabels as $value => $label)
                                 <option value="{{ $value }}" @selected(($filters['trigger_source'] ?? '') === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
@@ -36,8 +51,8 @@
                         <select name="sort" class="text-field">
                             <option value="newest" @selected(($filters['sort'] ?? '') === 'newest')>Сначала новые</option>
                             <option value="oldest" @selected(($filters['sort'] ?? '') === 'oldest')>Сначала старые</option>
-                            <option value="issues" @selected(($filters['sort'] ?? '') === 'issues')>По числу инцидентов</option>
-                            <option value="duplicates" @selected(($filters['sort'] ?? '') === 'duplicates')>По числу дублей</option>
+                            <option value="issues" @selected(($filters['sort'] ?? '') === 'issues')>По числу ошибок</option>
+                            <option value="duplicates" @selected(($filters['sort'] ?? '') === 'duplicates')>По числу повторов</option>
                         </select>
                     </label>
                 </div>
@@ -64,12 +79,12 @@
             <x-data-table>
                 <thead>
                     <tr>
-                        <th>Набор</th>
-                        <th>Источник</th>
-                        <th>Статус</th>
+                        <th>Таблица</th>
+                        <th>Как запустили</th>
+                        <th>Состояние</th>
                         <th>Строк</th>
-                        <th>Инцидентов</th>
-                        <th>Дубликатов</th>
+                        <th>Ошибок</th>
+                        <th>Повторов</th>
                         <th>Дата</th>
                     </tr>
                 </thead>
@@ -77,8 +92,8 @@
                     @forelse($runs as $run)
                         <tr>
                             <td><a href="/datasets/{{ $run->dataset_id }}" class="link link-hover">{{ $run->dataset->name }}</a></td>
-                            <td>{{ $run->trigger_source }}</td>
-                            <td>{{ $run->status }}</td>
+                            <td>{{ $triggerLabels[$run->trigger_source] ?? $run->trigger_source }}</td>
+                            <td>{{ $statusLabels[$run->status] ?? $run->status }}</td>
                             <td>{{ $run->total_rows }}</td>
                             <td>{{ $run->issues_count }}</td>
                             <td>{{ $run->duplicate_pairs_count }}</td>
@@ -86,7 +101,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center text-slate-500">Запусков пока нет.</td>
+                            <td colspan="7" class="text-center text-slate-500">История пока пуста.</td>
                         </tr>
                     @endforelse
                 </tbody>

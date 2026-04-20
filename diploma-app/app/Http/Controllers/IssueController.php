@@ -51,7 +51,7 @@ class IssueController extends Controller
         Gate::authorize('update', $issue->dataset);
 
         if (! $issue->suggested_value || ! $issue->datasetRow || ! $issue->column_name) {
-            return back()->with('error', 'Для этого инцидента нет безопасного regex-исправления.');
+            return back()->with('error', 'Для этой ошибки нет безопасного автоматического исправления по шаблону.');
         }
 
         $payload = $issue->datasetRow->payload;
@@ -62,7 +62,7 @@ class IssueController extends Controller
 
         $analysisService->analyze($issue->dataset, 'regex_fix');
 
-        return back()->with('success', 'Значение исправлено и набор перепроверен.');
+        return back()->with('success', 'Значение исправлено, и таблица проверена заново.');
     }
 
     public function ignore(Issue $issue, DatasetAnalysisService $analysisService): RedirectResponse
@@ -72,6 +72,6 @@ class IssueController extends Controller
         $issue->update(['status' => 'ignored']);
         $analysisService->refreshDatasetSummary($issue->dataset);
 
-        return back()->with('success', 'Инцидент помечен как проигнорированный.');
+        return back()->with('success', 'Ошибка отмечена как пропущенная.');
     }
 }

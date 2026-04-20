@@ -6,8 +6,8 @@ use App\Http\Requests\DatasetRequest;
 use App\Jobs\ProcessDatasetImport;
 use App\Models\Dataset;
 use App\Services\DatasetAnalysisService;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -90,7 +90,7 @@ class DatasetController extends Controller
         }
 
         return redirect("/datasets/{$dataset->id}")
-            ->with('success', 'Набор поставлен в очередь на импорт. Данные и инциденты появятся после завершения обработки.');
+            ->with('success', 'Таблица поставлена в очередь на загрузку. Данные и ошибки появятся после завершения обработки.');
     }
 
     public function show(Dataset $dataset)
@@ -128,7 +128,7 @@ class DatasetController extends Controller
         $analysisService->analyze($dataset, 'manual');
 
         return redirect("/datasets/{$dataset->id}")
-            ->with('success', 'Проверка набора запущена повторно.');
+            ->with('success', 'Проверка таблицы запущена повторно.');
     }
 
     public function destroy(Dataset $dataset): RedirectResponse
@@ -138,7 +138,7 @@ class DatasetController extends Controller
         $dataset->delete();
 
         return redirect('/datasets', 303)
-            ->with('success', 'Набор данных удален.');
+            ->with('success', 'Таблица удалена.');
     }
 
     private function loadDatasetDashboard(Dataset $dataset): void

@@ -1,3 +1,11 @@
+@php
+    $statusLabels = [
+        'open' => 'Открыта',
+        'fixed' => 'Исправлена',
+        'ignored' => 'Пропущена',
+    ];
+@endphp
+
 <section class="panel">
     <x-section-header title="Последние ошибки">
         <a href="/issues" class="secondary-button">Все ошибки</a>
@@ -20,7 +28,7 @@
                     <td>{{ $issue->title }}</td>
                     <td>{{ $issue->original_value ?: 'Пусто' }}</td>
                     <td>{{ $issue->suggested_value ?: 'Нет безопасного варианта' }}</td>
-                    <td>{{ $issue->status }}</td>
+                    <td>{{ $statusLabels[$issue->status] ?? $issue->status }}</td>
                 </tr>
             @empty
                 <tr>

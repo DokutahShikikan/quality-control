@@ -1,4 +1,12 @@
-<x-layout title="Кандидаты в дубликаты" current="duplicates">
+<x-layout title="Повторы" current="duplicates">
+    @php
+        $statusLabels = [
+            'open' => 'Открыт',
+            'fixed' => 'Исправлен',
+            'ignored' => 'Пропущен',
+        ];
+    @endphp
+
     <div class="space-y-6">
         <div class="panel">
             <form method="GET" action="/duplicates" class="space-y-4">
@@ -8,14 +16,14 @@
                         name="q"
                         label="Поиск"
                         :value="$filters['q'] ?? ''"
-                        placeholder="Набор или причина совпадения"
+                        placeholder="Таблица или причина совпадения"
                     />
 
                     <label class="form-field">
-                        <span class="form-label">Статус</span>
+                        <span class="form-label">Состояние</span>
                         <select name="status" class="text-field">
                             <option value="">Все</option>
-                            @foreach(['open' => 'Открыт', 'fixed' => 'Исправлен', 'ignored' => 'Игнорирован'] as $value => $label)
+                            @foreach($statusLabels as $value => $label)
                                 <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
@@ -54,12 +62,12 @@
             <x-data-table>
                 <thead>
                     <tr>
-                        <th>Набор</th>
-                        <th>Базовая строка</th>
-                        <th>Дубликат</th>
+                        <th>Таблица</th>
+                        <th>Основная строка</th>
+                        <th>Похожая строка</th>
                         <th>Уверенность</th>
-                        <th>Причина</th>
-                        <th>Статус</th>
+                        <th>Почему это повтор</th>
+                        <th>Состояние</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
@@ -71,12 +79,12 @@
                             <td>#{{ $duplicate->duplicateRow->row_index }}</td>
                             <td>{{ number_format($duplicate->confidence * 100, 0) }}%</td>
                             <td>{{ $duplicate->rationale }}</td>
-                            <td>{{ $duplicate->status }}</td>
+                            <td>{{ $statusLabels[$duplicate->status] ?? $duplicate->status }}</td>
                             <td>
                                 <div class="flex flex-wrap gap-2">
                                     <form method="POST" action="/duplicates/{{ $duplicate->id }}/fix">
                                         @csrf
-                                        <button class="btn btn-sm rounded-none btn-primary action-button" type="submit" {{ $duplicate->status !== 'open' ? 'disabled' : '' }}>Удалить дубликат</button>
+                                        <button class="btn btn-sm rounded-none btn-primary action-button" type="submit" {{ $duplicate->status !== 'open' ? 'disabled' : '' }}>Удалить повтор</button>
                                     </form>
                                     <form method="POST" action="/duplicates/{{ $duplicate->id }}/ignore">
                                         @csrf
@@ -87,7 +95,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center text-slate-500">Дубликаты не найдены.</td>
+                            <td colspan="7" class="text-center text-slate-500">Повторы не найдены.</td>
                         </tr>
                     @endforelse
                 </tbody>

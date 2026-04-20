@@ -1,4 +1,25 @@
 <x-layout title="Ошибки в данных" current="issues">
+    @php
+        $statusLabels = [
+            'open' => 'Открыта',
+            'fixed' => 'Исправлена',
+            'ignored' => 'Пропущена',
+        ];
+
+        $issueTypeLabels = [
+            'missing_value' => 'Пустое значение',
+            'invalid_format' => 'Неверный формат',
+            'out_of_range' => 'Недопустимое значение',
+            'duplicate_value' => 'Повтор значения',
+        ];
+
+        $severityLabels = [
+            'high' => 'Высокая',
+            'medium' => 'Средняя',
+            'low' => 'Низкая',
+        ];
+    @endphp
+
     <div class="space-y-6">
         <div class="panel">
             <form method="GET" action="/issues" class="space-y-4">
@@ -8,14 +29,14 @@
                         name="q"
                         label="Поиск"
                         :value="$filters['q'] ?? ''"
-                        placeholder="Набор, колонка, значение или текст ошибки"
+                        placeholder="Таблица, колонка, значение или текст ошибки"
                     />
 
                     <label class="form-field">
                         <span class="form-label">Состояние</span>
                         <select name="status" class="text-field">
                             <option value="">Все</option>
-                            @foreach(['open' => 'Открыта', 'fixed' => 'Исправлена', 'ignored' => 'Пропущена'] as $value => $label)
+                            @foreach($statusLabels as $value => $label)
                                 <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
@@ -25,7 +46,7 @@
                         <span class="form-label">Вид ошибки</span>
                         <select name="issue_type" class="text-field">
                             <option value="">Все</option>
-                            @foreach(['missing_value' => 'Пустое значение', 'invalid_format' => 'Неверный формат'] as $value => $label)
+                            @foreach($issueTypeLabels as $value => $label)
                                 <option value="{{ $value }}" @selected(($filters['issue_type'] ?? '') === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
@@ -35,7 +56,7 @@
                         <span class="form-label">Важность</span>
                         <select name="severity" class="text-field">
                             <option value="">Все</option>
-                            @foreach(['high' => 'Высокая', 'medium' => 'Средняя', 'low' => 'Низкая'] as $value => $label)
+                            @foreach($severityLabels as $value => $label)
                                 <option value="{{ $value }}" @selected(($filters['severity'] ?? '') === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
@@ -74,7 +95,7 @@
             <x-data-table>
                 <thead>
                     <tr>
-                        <th>Набор</th>
+                        <th>Таблица</th>
                         <th>Строка</th>
                         <th>Колонка</th>
                         <th>Что не так</th>
@@ -97,7 +118,7 @@
                             <td>{{ $issue->title }}</td>
                             <td>{{ $issue->original_value ?: 'Пусто' }}</td>
                             <td>{{ $issue->suggested_value ?: 'Нет' }}</td>
-                            <td>{{ $issue->status }}</td>
+                            <td>{{ $statusLabels[$issue->status] ?? $issue->status }}</td>
                             <td>
                                 <div class="flex flex-wrap gap-2">
                                     <form method="POST" action="/issues/{{ $issue->id }}/fix">

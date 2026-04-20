@@ -41,7 +41,7 @@ for (const container of liveContainers) {
                 }
             }
         } catch (error) {
-            console.error('Не удалось обновить блоки набора данных', error);
+            console.error('Не удалось обновить блоки таблицы', error);
         } finally {
             isRefreshing = false;
         }

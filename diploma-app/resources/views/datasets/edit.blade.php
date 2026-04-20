@@ -1,7 +1,7 @@
-<x-layout title="Редактирование набора" current="datasets">
+<x-layout title="Редактирование таблицы" current="datasets">
     <div class="space-y-8">
         <div class="panel">
-            <x-section-header title="Редактирование набора" />
+            <x-section-header title="Редактирование таблицы" />
 
             <form method="POST" action="/datasets/{{$dataset->id}}" class="mt-8 space-y-6">
                 @csrf
@@ -9,13 +9,13 @@
 
                 <x-forms.textarea-field
                     name="description"
-                    label="Описание набора и сценария автоисправления"
+                    label="Описание таблицы и сценария автоисправления"
                     :value="trim($dataset->description)"
                 />
 
                 <x-form-actions>
                     <button type="submit" class="primary-button">Сохранить изменения</button>
-                    <button type="submit" form="delete-dataset-form" class="danger-button">Удалить набор</button>
+                    <button type="submit" form="delete-dataset-form" class="danger-button">Удалить таблицу</button>
                     <a href="/datasets/{{$dataset->id}}" class="secondary-button">Назад</a>
                 </x-form-actions>
             </form>

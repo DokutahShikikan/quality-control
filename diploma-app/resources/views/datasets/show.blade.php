@@ -6,6 +6,14 @@
             'failed' => 'Во время загрузки произошла ошибка.',
             default => 'Файл загружен.',
         };
+
+        $importStateLabel = match ($dataset->import_status) {
+            'queued' => 'В очереди',
+            'processing' => 'Загружается',
+            'failed' => 'Ошибка загрузки',
+            'ready' => 'Готово',
+            default => $dataset->import_status,
+        };
     @endphp
 
     <div
@@ -26,7 +34,7 @@
                     </div>
 
                     <x-status-pill tone="review">
-                        {{ strtoupper($dataset->import_status) }}
+                        {{ $importStateLabel }}
                     </x-status-pill>
                 </div>
             </section>
@@ -43,20 +51,20 @@
             <section class="panel">
                 <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                     <div>
-                        <h2 class="panel-title">О наборе</h2>
+                        <h2 class="panel-title">О таблице</h2>
                         <p class="mt-4 text-lg leading-8 text-slate-700">
-                            {{ $dataset->description ?: 'Описание не добавлено. Набор загружен для поиска пустых ячеек, неверных форматов и повторов.' }}
+                            {{ $dataset->description ?: 'Описание не добавлено. Таблица загружена для поиска пустых ячеек, неверных форматов и повторов.' }}
                         </p>
                     </div>
 
                     <x-status-pill :tone="$dataset->import_status === 'ready' && $dataset->review_status === 'clean' ? 'clean' : 'review'">
-                        {{ $dataset->import_status === 'ready' ? ($dataset->review_status === 'clean' ? 'Проблем не найдено' : 'Нужно проверить') : strtoupper($dataset->import_status) }}
+                        {{ $dataset->import_status === 'ready' ? ($dataset->review_status === 'clean' ? 'Проблем не найдено' : 'Нужно проверить') : $importStateLabel }}
                     </x-status-pill>
                 </div>
 
                 <dl class="mt-8 grid gap-4 md:grid-cols-2">
                     <x-mini-stat label="Исходный файл" :value="$dataset->source_filename" />
-                    <x-mini-stat label="Состояние загрузки" :value="$dataset->import_status" />
+                    <x-mini-stat label="Состояние загрузки" :value="$importStateLabel" />
                     <x-mini-stat label="Последняя проверка" :value="optional($dataset->last_checked_at)->format('d.m.Y H:i') ?: 'Еще не запускалась'" />
                     <x-mini-stat label="Ошибок по формату" :value="data_get($dataset->metrics, 'format_error_rate', 0).'%'"/>
                     <x-mini-stat label="Следующий шаг" :value="data_get($dataset->metrics, 'deepseek_stage_ready', false) ? 'Можно включать ИИ' : 'Сначала исправить понятные ошибки'" />
@@ -74,7 +82,7 @@
                     <form method="POST" action="/datasets/{{ $dataset->id }}">
                         @csrf
                         @method('DELETE')
-                        <button class="danger-button" type="submit">Удалить набор</button>
+                        <button class="danger-button" type="submit">Удалить таблицу</button>
                     </form>
                 </div>
             </section>

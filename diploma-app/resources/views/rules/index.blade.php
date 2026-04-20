@@ -1,9 +1,24 @@
 <x-layout title="Шаблоны проверки" current="rules">
+    @php
+        $issueTypeLabels = [
+            'missing_value' => 'Пустое значение',
+            'invalid_format' => 'Неверный формат',
+            'out_of_range' => 'Недопустимое значение',
+            'duplicate_value' => 'Повтор значения',
+        ];
+
+        $severityLabels = [
+            'high' => 'Высокая',
+            'medium' => 'Средняя',
+            'low' => 'Низкая',
+        ];
+    @endphp
+
     <div class="space-y-8">
         <section class="panel">
             <x-section-header
                 title="Активные шаблоны проверки"
-                description="На первом этапе сайт опирается на понятные шаблоны проверки и безопасные автоматические исправления. Этот слой помогает убрать очевидные ошибки до передачи спорных случаев в ИИ."
+                description="Сначала сайт опирается на понятные шаблоны проверки и безопасные автоматические исправления. Этот слой помогает убрать очевидные ошибки до передачи спорных случаев в ИИ."
             />
         </section>
 
@@ -32,8 +47,8 @@
                         @endphp
                         <tr>
                             <td>{{ $rule->name }}</td>
-                            <td>{{ $rule->issue_type }}</td>
-                            <td>{{ $rule->severity }}</td>
+                            <td>{{ $issueTypeLabels[$rule->issue_type] ?? $rule->issue_type }}</td>
+                            <td>{{ $severityLabels[$rule->severity] ?? $rule->severity }}</td>
                             <td>{{ implode(', ', $columnHints) }}</td>
                             <td>{{ $rule->description }}</td>
                         </tr>

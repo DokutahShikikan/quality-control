@@ -3,9 +3,9 @@
 @php
     $statusLabel = match ($dataset->import_status) {
         'queued' => 'В очереди',
-        'processing' => 'Импортируется',
-        'failed' => 'Ошибка импорта',
-        default => $dataset->review_status === 'clean' ? 'Чисто' : 'Нужна проверка',
+        'processing' => 'Загружается',
+        'failed' => 'Ошибка загрузки',
+        default => $dataset->review_status === 'clean' ? 'Без проблем' : 'Нужно проверить',
     };
 
     $statusTone = $dataset->import_status === 'ready' && $dataset->review_status === 'clean'
@@ -26,13 +26,13 @@
     </div>
 
     <p class="mt-5 text-base leading-7 text-slate-700">
-        {{ $dataset->description ?: 'Описание пока не добавлено. Набор загружен для проверки форматов, пустых значений и дубликатов.' }}
+        {{ $dataset->description ?: 'Описание пока не добавлено. Таблица загружена для поиска неверных форматов, пустых ячеек и повторов.' }}
     </p>
 
     <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <x-mini-stat label="Строк" :value="$dataset->total_rows" />
         <x-mini-stat label="Колонок" :value="$dataset->total_columns" />
-        <x-mini-stat label="Инцидентов" :value="data_get($dataset->metrics, 'open_issues', 0)" />
-        <x-mini-stat label="Дубликатов" :value="data_get($dataset->metrics, 'open_duplicates', 0)" />
+        <x-mini-stat label="Ошибок" :value="data_get($dataset->metrics, 'open_issues', 0)" />
+        <x-mini-stat label="Повторов" :value="data_get($dataset->metrics, 'open_duplicates', 0)" />
     </div>
 </a>
