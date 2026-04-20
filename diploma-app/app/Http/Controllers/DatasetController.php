@@ -7,6 +7,7 @@ use App\Jobs\ProcessDatasetImport;
 use App\Models\Dataset;
 use App\Services\DatasetAnalysisService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -96,15 +97,27 @@ class DatasetController extends Controller
     {
         Gate::authorize('update', $dataset);
 
-        $dataset->load([
-            'checkRuns',
-            'issues' => fn ($query) => $query->latest()->limit(8),
-            'duplicateCandidates' => fn ($query) => $query->with(['primaryRow', 'duplicateRow'])->latest()->limit(8),
-        ]);
+        $this->loadDatasetDashboard($dataset);
 
         return view('datasets.show', [
             'dataset' => $dataset,
             'latestRun' => $dataset->checkRuns->first(),
+        ]);
+    }
+
+    public function livePanels(Dataset $dataset): JsonResponse
+    {
+        Gate::authorize('update', $dataset);
+
+        $this->loadDatasetDashboard($dataset);
+
+        return response()->json([
+            'issuesHtml' => view('datasets.partials.recent-errors-table', ['dataset' => $dataset])->render(),
+            'duplicatesHtml' => view('datasets.partials.recent-duplicates-table', ['dataset' => $dataset])->render(),
+            'statsHtml' => view('datasets.partials.dataset-status-card', [
+                'dataset' => $dataset,
+                'latestRun' => $dataset->checkRuns->first(),
+            ])->render(),
         ]);
     }
 
@@ -126,5 +139,14 @@ class DatasetController extends Controller
 
         return redirect('/datasets', 303)
             ->with('success', 'Набор данных удален.');
+    }
+
+    private function loadDatasetDashboard(Dataset $dataset): void
+    {
+        $dataset->load([
+            'checkRuns',
+            'issues' => fn ($query) => $query->latest()->limit(8),
+            'duplicateCandidates' => fn ($query) => $query->with(['primaryRow', 'duplicateRow'])->latest()->limit(8),
+        ]);
     }
 }

@@ -123,4 +123,40 @@ class DatasetImportTest extends TestCase
             'rationale' => 'Совпадает адрес электронной почты.',
         ]);
     }
+
+    public function test_dataset_live_panels_endpoint_returns_partial_html(): void
+    {
+        $this->seed();
+
+        $user = User::factory()->create();
+        $dataset = Dataset::query()->create([
+            'user_id' => $user->id,
+            'name' => 'Живое обновление',
+            'description' => 'Проверка частичного обновления',
+            'source_filename' => 'demo.csv',
+            'source_path' => 'imports/demo.csv',
+            'source_mime' => 'text/csv',
+            'import_status' => 'ready',
+            'review_status' => 'needs_review',
+            'headers' => ['email'],
+            'metrics' => ['open_issues' => 1, 'open_duplicates' => 1],
+        ]);
+
+        $dataset->issues()->create([
+            'check_run_id' => $dataset->checkRuns()->create(['status' => 'completed'])->id,
+            'issue_type' => 'invalid_format',
+            'severity' => 'high',
+            'title' => 'Неверный адрес',
+            'message' => 'Ошибка в почте',
+            'column_name' => 'email',
+            'original_value' => 'bad mail',
+            'status' => 'open',
+        ]);
+
+        $response = $this->actingAs($user)->getJson("/datasets/{$dataset->id}/live-panels");
+
+        $response->assertOk();
+        $response->assertJsonStructure(['issuesHtml', 'duplicatesHtml', 'statsHtml']);
+        $this->assertStringContainsString('Последние ошибки', $response->json('issuesHtml'));
+    }
 }

@@ -4,23 +4,23 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ $title ? "{$title} | DQ System" : 'DQ System' }}</title>
+        <title>{{ $title ? "{$title} | Проверка данных" : 'Проверка данных' }}</title>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body>
         <div class="app-shell">
             <header class="app-header">
                 <div>
-                    <p class="badge badge-neutral badge-outline mb-3 rounded-full px-4 py-3">Rule-based Data Quality Platform</p>
-                    <h1 class="app-title">{{ $title ?: 'Система контроля качества данных' }}</h1>
+                    <p class="badge badge-neutral badge-outline mb-3 rounded-full px-4 py-3">Проверка таблиц без ручной рутины</p>
+                    <h1 class="app-title">{{ $title ?: 'Система проверки качества данных' }}</h1>
                     <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-600 md:text-base">
-                        Импорт таблиц, поиск проблем по regex, анализ дублей и подготовка спорных кейсов к AI-этапу.
+                        Загружайте таблицы, находите пустые ячейки, неверные форматы и повторы, а потом исправляйте их понятными действиями.
                     </p>
                 </div>
                 <div class="app-brand">
-                    <div class="text-xs uppercase tracking-[0.35em] text-slate-500">DQ System</div>
-                    <div class="text-lg font-bold text-slate-800">Regex first, AI second</div>
-                    <div class="text-sm text-slate-500">Adaptive workspace for data review</div>
+                    <div class="text-xs uppercase tracking-[0.35em] text-slate-500">Проверка данных</div>
+                    <div class="text-lg font-bold text-slate-800">Сначала понятные ошибки, потом ИИ</div>
+                    <div class="text-sm text-slate-500">Рабочее место для разбора загруженных таблиц</div>
                 </div>
             </header>
 
