@@ -1,4 +1,4 @@
-<x-layout title="Инциденты качества" current="issues">
+<x-layout title="Ошибки в данных" current="issues">
     <div class="space-y-6">
         <div class="panel">
             <form method="GET" action="/issues" class="space-y-4">
@@ -8,31 +8,31 @@
                         name="q"
                         label="Поиск"
                         :value="$filters['q'] ?? ''"
-                        placeholder="Набор, колонка, значение, текст ошибки"
+                        placeholder="Набор, колонка, значение или текст ошибки"
                     />
 
                     <label class="form-field">
-                        <span class="form-label">Статус</span>
+                        <span class="form-label">Состояние</span>
                         <select name="status" class="text-field">
                             <option value="">Все</option>
-                            @foreach(['open' => 'Открыт', 'fixed' => 'Исправлен', 'ignored' => 'Игнорирован'] as $value => $label)
+                            @foreach(['open' => 'Открыта', 'fixed' => 'Исправлена', 'ignored' => 'Пропущена'] as $value => $label)
                                 <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
                     </label>
 
                     <label class="form-field">
-                        <span class="form-label">Тип</span>
+                        <span class="form-label">Вид ошибки</span>
                         <select name="issue_type" class="text-field">
                             <option value="">Все</option>
-                            @foreach(['missing_value' => 'Пустые значения', 'invalid_format' => 'Неверный формат'] as $value => $label)
+                            @foreach(['missing_value' => 'Пустое значение', 'invalid_format' => 'Неверный формат'] as $value => $label)
                                 <option value="{{ $value }}" @selected(($filters['issue_type'] ?? '') === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
                     </label>
 
                     <label class="form-field">
-                        <span class="form-label">Критичность</span>
+                        <span class="form-label">Важность</span>
                         <select name="severity" class="text-field">
                             <option value="">Все</option>
                             @foreach(['high' => 'Высокая', 'medium' => 'Средняя', 'low' => 'Низкая'] as $value => $label)
@@ -46,8 +46,8 @@
                         <select name="sort" class="text-field">
                             <option value="newest" @selected(($filters['sort'] ?? '') === 'newest')>Сначала новые</option>
                             <option value="oldest" @selected(($filters['sort'] ?? '') === 'oldest')>Сначала старые</option>
-                            <option value="severity" @selected(($filters['sort'] ?? '') === 'severity')>По критичности</option>
-                            <option value="status" @selected(($filters['sort'] ?? '') === 'status')>По статусу</option>
+                            <option value="severity" @selected(($filters['sort'] ?? '') === 'severity')>По важности</option>
+                            <option value="status" @selected(($filters['sort'] ?? '') === 'status')>По состоянию</option>
                         </select>
                     </label>
                 </div>
@@ -77,15 +77,20 @@
                         <th>Набор</th>
                         <th>Строка</th>
                         <th>Колонка</th>
-                        <th>Проблема</th>
-                        <th>Значение</th>
-                        <th>Предложение</th>
-                        <th>Статус</th>
+                        <th>Что не так</th>
+                        <th>Было</th>
+                        <th>Предлагаем исправить</th>
+                        <th>Состояние</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($issues as $issue)
+                        @php
+                            $fixHint = $issue->suggested_value
+                                ? 'Сейчас: '.($issue->original_value ?: 'пусто').' | Будет: '.$issue->suggested_value
+                                : 'Для этой ошибки нет безопасного автоматического исправления';
+                        @endphp
                         <tr>
                             <td><a href="/datasets/{{ $issue->dataset_id }}" class="link link-hover">{{ $issue->dataset->name }}</a></td>
                             <td>#{{ data_get($issue->meta, 'row_index', '-') }}</td>
@@ -98,18 +103,24 @@
                                 <div class="flex flex-wrap gap-2">
                                     <form method="POST" action="/issues/{{ $issue->id }}/fix">
                                         @csrf
-                                        <button class="btn btn-sm rounded-none btn-primary" type="submit" {{ $issue->status !== 'open' || !$issue->suggested_value ? 'disabled' : '' }}>Исправить</button>
+                                        <button
+                                            class="btn btn-sm rounded-none btn-primary"
+                                            type="submit"
+                                            title="{{ $fixHint }}"
+                                            aria-label="{{ $fixHint }}"
+                                            {{ $issue->status !== 'open' || ! $issue->suggested_value ? 'disabled' : '' }}
+                                        >Исправить</button>
                                     </form>
                                     <form method="POST" action="/issues/{{ $issue->id }}/ignore">
                                         @csrf
-                                        <button class="btn btn-sm rounded-none btn-ghost border border-slate-300" type="submit" {{ $issue->status !== 'open' ? 'disabled' : '' }}>Игнорировать</button>
+                                        <button class="btn btn-sm rounded-none btn-ghost border border-slate-300" type="submit" {{ $issue->status !== 'open' ? 'disabled' : '' }}>Пропустить</button>
                                     </form>
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center text-slate-500">Инциденты не найдены.</td>
+                            <td colspan="8" class="text-center text-slate-500">Ошибки не найдены.</td>
                         </tr>
                     @endforelse
                 </tbody>
