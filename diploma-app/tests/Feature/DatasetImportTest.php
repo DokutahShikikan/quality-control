@@ -97,4 +97,30 @@ class DatasetImportTest extends TestCase
         $response->assertStatus(303);
         $this->assertDatabaseMissing('datasets', ['id' => $dataset->id]);
     }
+
+    public function test_import_detects_duplicates_by_email(): void
+    {
+        $this->seed();
+
+        $user = User::factory()->create();
+
+        $file = UploadedFile::fake()->createWithContent(
+            'duplicates.csv',
+            implode("\n", [
+                'record_id,full_name,email,phone,status',
+                'A-001,Анна Иванова,shared@example.com,+7 (999) 111-22-33,active',
+                'A-002,Иван Петров,shared@example.com,+7 (999) 444-55-66,pending',
+            ])
+        );
+
+        $this->actingAs($user)->post('/datasets', [
+            'name' => 'Дубли по email',
+            'description' => 'Проверка дублей',
+            'source_file' => $file,
+        ]);
+
+        $this->assertDatabaseHas('duplicate_candidates', [
+            'rationale' => 'Совпадает адрес электронной почты.',
+        ]);
+    }
 }

@@ -7,6 +7,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use RuntimeException;
 use SimpleXMLElement;
+use Symfony\Component\Process\Process;
 use ZipArchive;
 
 class SpreadsheetImportService
@@ -53,7 +54,6 @@ class SpreadsheetImportService
         $rows = [];
         $rawHeader = fgetcsv($handle, 0, $delimiter) ?: [];
         $headers = $this->sanitizeHeaders($rawHeader);
-
         $rowIndex = 1;
 
         while (($values = fgetcsv($handle, 0, $delimiter)) !== false) {
@@ -74,10 +74,15 @@ class SpreadsheetImportService
 
     private function importXlsx(string $path): array
     {
-        if (! class_exists(ZipArchive::class)) {
-            throw new RuntimeException('Для импорта XLSX в PHP должно быть включено расширение zip.');
+        if (class_exists(ZipArchive::class)) {
+            return $this->importXlsxWithPhp($path);
         }
 
+        return $this->importXlsxWithPython($path);
+    }
+
+    private function importXlsxWithPhp(string $path): array
+    {
         $archive = new ZipArchive();
 
         if ($archive->open($path) !== true) {
@@ -129,6 +134,52 @@ class SpreadsheetImportService
 
         return [
             'headers' => $header,
+            'rows' => $rows,
+        ];
+    }
+
+    private function importXlsxWithPython(string $path): array
+    {
+        $scriptPath = base_path('scripts/xlsx_to_json.py');
+
+        if (! is_file($scriptPath)) {
+            throw new RuntimeException('Не найден Python-скрипт для резервного импорта XLSX.');
+        }
+
+        $process = new Process(['python', $scriptPath, $path]);
+        $process->setTimeout(300);
+        $process->run();
+
+        if (! $process->isSuccessful()) {
+            throw new RuntimeException(
+                trim($process->getErrorOutput()) ?: 'Не удалось импортировать XLSX через Python fallback.'
+            );
+        }
+
+        $decoded = json_decode($process->getOutput(), true);
+
+        if (! is_array($decoded) || ! isset($decoded['headers'], $decoded['rows'])) {
+            throw new RuntimeException('Python fallback вернул некорректный ответ для XLSX.');
+        }
+
+        $headers = $this->sanitizeHeaders($decoded['headers']);
+        $rows = [];
+
+        foreach ($decoded['rows'] as $index => $payload) {
+            $normalizedPayload = [];
+
+            foreach ($headers as $headerIndex => $header) {
+                $normalizedPayload[$header] = $this->normalizeCell((string) Arr::get($payload, $headerIndex, ''));
+            }
+
+            $rows[] = [
+                'row_index' => $index + 1,
+                'payload' => $normalizedPayload,
+            ];
+        }
+
+        return [
+            'headers' => $headers,
             'rows' => $rows,
         ];
     }

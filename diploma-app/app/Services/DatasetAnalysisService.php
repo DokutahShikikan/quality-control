@@ -52,8 +52,9 @@ class DatasetAnalysisService
                         'fingerprint' => $fingerprint,
                     ];
 
-                    if ($fingerprint) {
-                        $duplicateGroups[$fingerprint][] = $row->id;
+                    foreach ($this->buildDuplicateKeys($row->payload, $fingerprint) as $duplicateKey => $rationale) {
+                        $duplicateGroups[$duplicateKey]['rationale'] = $rationale;
+                        $duplicateGroups[$duplicateKey]['row_ids'][] = $row->id;
                     }
                 }
 
@@ -175,7 +176,7 @@ class DatasetAnalysisService
                 'severity' => 'high',
                 'description' => 'Проверяет числовые поля, например salary, amount, total, score или price.',
                 'pattern' => '^-?\d+(?:[.,]\d+)?$',
-                'column_hints' => ['salary', 'amount', 'price', 'cost', 'total', 'score', 'qty', 'quantity', 'sum'],
+                'column_hints' => ['salary', 'amount', 'price', 'cost', 'total', 'score', 'qty', 'quantity', 'sum', 'bonus'],
             ],
             [
                 'name' => 'Status format',
@@ -253,22 +254,34 @@ class DatasetAnalysisService
         $created = 0;
         $timestamp = now();
         $records = [];
+        $seenPairs = [];
 
         foreach ($duplicateGroups as $group) {
-            if (count($group) < 2) {
+            $rowIds = array_values(array_unique($group['row_ids'] ?? []));
+
+            if (count($rowIds) < 2) {
                 continue;
             }
 
-            $primaryRowId = $group[0];
+            $primaryRowId = $rowIds[0];
+            $rationale = $group['rationale'] ?? 'Совпадает нормализованный отпечаток строки.';
 
-            foreach (array_slice($group, 1) as $duplicateRowId) {
+            foreach (array_slice($rowIds, 1) as $duplicateRowId) {
+                $pairKey = $primaryRowId.'-'.$duplicateRowId;
+
+                if (isset($seenPairs[$pairKey])) {
+                    continue;
+                }
+
+                $seenPairs[$pairKey] = true;
+
                 $records[] = [
                     'dataset_id' => $dataset->id,
                     'check_run_id' => $checkRun->id,
                     'primary_row_id' => $primaryRowId,
                     'duplicate_row_id' => $duplicateRowId,
                     'confidence' => 1.00,
-                    'rationale' => 'Совпадает нормализованный отпечаток строки.',
+                    'rationale' => $rationale,
                     'status' => 'open',
                     'created_at' => $timestamp,
                     'updated_at' => $timestamp,
@@ -294,6 +307,43 @@ class DatasetAnalysisService
             ->all();
 
         return $values === [] ? null : sha1(implode('|', $values));
+    }
+
+    private function buildDuplicateKeys(array $payload, ?string $fingerprint): array
+    {
+        $keys = [];
+
+        if ($fingerprint) {
+            $keys['fingerprint:'.$fingerprint] = 'Совпадает нормализованный отпечаток строки.';
+        }
+
+        foreach ($payload as $column => $value) {
+            $normalizedValue = Str::of((string) $value)->trim()->lower()->value();
+
+            if ($normalizedValue === '') {
+                continue;
+            }
+
+            $normalizedColumn = Str::lower($column);
+
+            if (Str::contains($normalizedColumn, ['email', 'e-mail'])) {
+                $keys['email:'.$normalizedValue] = 'Совпадает адрес электронной почты.';
+            }
+
+            if (Str::contains($normalizedColumn, ['phone', 'tel', 'mobile', 'телефон'])) {
+                $digits = preg_replace('/\D+/u', '', $normalizedValue) ?? '';
+
+                if (strlen($digits) >= 10) {
+                    $keys['phone:'.$digits] = 'Совпадает номер телефона.';
+                }
+            }
+
+            if (Str::contains($normalizedColumn, ['record_id', 'client_id', 'user_id']) || $normalizedColumn === 'id') {
+                $keys['record:'.$normalizedValue] = 'Совпадает идентификатор записи.';
+            }
+        }
+
+        return $keys;
     }
 
     private function persistFingerprints(array $fingerprintUpdates): void
@@ -405,7 +455,7 @@ class DatasetAnalysisService
 
     private function normalizeNumeric(string $value): ?string
     {
-        $normalized = str_replace(',', '.', trim($value));
+        $normalized = str_replace([',', ' '], ['.', ''], trim($value));
 
         return preg_match('/^-?\d+(?:\.\d+)?$/', $normalized) ? $normalized : null;
     }

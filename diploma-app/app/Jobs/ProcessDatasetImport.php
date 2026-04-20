@@ -23,6 +23,9 @@ class ProcessDatasetImport implements ShouldQueue
         SpreadsheetImportService $importService,
         DatasetAnalysisService $analysisService,
     ): void {
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(0);
+
         $dataset = Dataset::query()->find($this->datasetId);
 
         if (! $dataset || ! $dataset->source_path) {
