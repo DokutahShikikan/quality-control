@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Dataset;
+use App\Models\DatasetRow;
 use App\Models\Issue;
 use App\Services\DatasetAnalysisService;
 use Illuminate\Http\RedirectResponse;
@@ -46,12 +48,12 @@ class IssueController extends Controller
         ]);
     }
 
-    public function fix(int $issue, DatasetAnalysisService $analysisService): RedirectResponse
+    public function fix(Request $request, int $issue, DatasetAnalysisService $analysisService): RedirectResponse
     {
         $issue = $this->resolveIssue($issue);
 
         if (! $issue) {
-            return redirect('/issues')->with('error', 'Эта ошибка уже обновилась после новой проверки. Открой свежий список и попробуй снова.');
+            return $this->fixFromSnapshot($request, $analysisService);
         }
 
         Gate::authorize('update', $issue->dataset);
@@ -94,5 +96,46 @@ class IssueController extends Controller
             ->whereIn('dataset_id', Auth::user()->datasets()->pluck('id'))
             ->with(['dataset', 'datasetRow'])
             ->first();
+    }
+
+    private function fixFromSnapshot(Request $request, DatasetAnalysisService $analysisService): RedirectResponse
+    {
+        $datasetId = (int) $request->integer('dataset_id');
+        $datasetRowId = (int) $request->integer('dataset_row_id');
+        $columnName = trim((string) $request->input('column_name'));
+        $suggestedValue = (string) $request->input('suggested_value', '');
+
+        if (! $datasetId || ! $datasetRowId || $columnName === '' || $suggestedValue === '') {
+            return redirect('/issues')->with('error', 'Эта ошибка уже обновилась после новой проверки. Открой свежий список и попробуй снова.');
+        }
+
+        $dataset = Dataset::query()
+            ->whereKey($datasetId)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (! $dataset) {
+            return redirect('/issues')->with('error', 'Таблица для этого исправления не найдена.');
+        }
+
+        Gate::authorize('update', $dataset);
+
+        $datasetRow = DatasetRow::query()
+            ->whereKey($datasetRowId)
+            ->where('dataset_id', $dataset->id)
+            ->first();
+
+        if (! $datasetRow) {
+            return redirect('/issues')->with('error', 'Строка уже изменилась после новой проверки. Открой свежий список и попробуй снова.');
+        }
+
+        $payload = $datasetRow->payload;
+        $payload[$columnName] = $suggestedValue;
+
+        $datasetRow->update(['payload' => $payload]);
+
+        $analysisService->analyze($dataset, 'regex_fix');
+
+        return redirect('/issues')->with('success', 'Значение исправлено, и таблица проверена заново.');
     }
 }

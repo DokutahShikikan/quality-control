@@ -263,4 +263,49 @@ class DatasetImportTest extends TestCase
         $response->assertRedirect('/issues');
         $response->assertSessionHas('error');
     }
+
+    public function test_fixing_missing_issue_can_use_snapshot_payload(): void
+    {
+        $this->seed();
+
+        $user = User::factory()->create();
+        $dataset = Dataset::query()->create([
+            'user_id' => $user->id,
+            'name' => 'Снимок ошибки',
+            'description' => 'Проверка fallback-исправления',
+            'source_filename' => 'clients.csv',
+            'source_path' => 'imports/clients.csv',
+            'source_mime' => 'text/csv',
+            'import_status' => 'ready',
+            'review_status' => 'needs_review',
+            'headers' => ['status'],
+            'total_rows' => 1,
+            'total_columns' => 1,
+            'metrics' => ['open_issues' => 1],
+        ]);
+
+        $row = DatasetRow::query()->create([
+            'dataset_id' => $dataset->id,
+            'row_index' => 1,
+            'payload' => ['status' => 'actve'],
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user)->post('/issues/999999/fix', [
+            'dataset_id' => $dataset->id,
+            'dataset_row_id' => $row->id,
+            'column_name' => 'status',
+            'suggested_value' => 'active',
+        ]);
+
+        $response->assertRedirect('/issues');
+
+        $row->refresh();
+
+        $this->assertSame('active', $row->payload['status']);
+        $this->assertDatabaseHas('check_runs', [
+            'dataset_id' => $dataset->id,
+            'trigger_source' => 'regex_fix',
+        ]);
+    }
 }

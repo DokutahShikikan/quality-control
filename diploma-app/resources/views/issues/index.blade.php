@@ -123,6 +123,10 @@
                                 <div class="flex flex-wrap gap-2">
                                     <form method="POST" action="/issues/{{ $issue->id }}/fix">
                                         @csrf
+                                        <input type="hidden" name="dataset_id" value="{{ $issue->dataset_id }}">
+                                        <input type="hidden" name="dataset_row_id" value="{{ $issue->dataset_row_id }}">
+                                        <input type="hidden" name="column_name" value="{{ $issue->column_name }}">
+                                        <input type="hidden" name="suggested_value" value="{{ $issue->suggested_value }}">
                                         <span class="tooltip-trigger">
                                             <button
                                                 class="btn btn-sm rounded-none btn-primary action-button"
