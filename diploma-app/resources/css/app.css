@@ -17,10 +17,7 @@
 
     body {
         @apply min-h-screen text-slate-900 antialiased;
-        background:
-            radial-gradient(circle at top left, rgba(38, 132, 255, 0.18), transparent 28%),
-            radial-gradient(circle at top right, rgba(14, 165, 233, 0.18), transparent 24%),
-            linear-gradient(180deg, #f8fbff 0%, #eef4fb 52%, #f6f9fc 100%);
+        background: #eef4fb;
     }
 
     body::before {
@@ -46,7 +43,7 @@
     .app-shell::before {
         content: '';
         @apply pointer-events-none absolute inset-x-0 top-0 h-64;
-        background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(14, 165, 233, 0.05) 45%, transparent 85%);
+        background: rgba(37, 99, 235, 0.08);
     }
 
     .app-header {
@@ -75,7 +72,7 @@
     }
 
     .sidebar {
-        @apply rounded-[28px] border border-white/80 bg-white/72 p-0 shadow-[0_18px_42px_rgba(148,163,184,0.10)] backdrop-blur xl:sticky xl:top-0 xl:-mt-36 xl:self-start xl:z-10;
+        @apply rounded-[8px] border border-white/80 bg-white/72 p-0 shadow-[0_18px_42px_rgba(148,163,184,0.10)] backdrop-blur xl:sticky xl:top-0 xl:-mt-36 xl:w-[270px] xl:self-start xl:z-10;
     }
 
     .sidebar-nav {
@@ -83,11 +80,11 @@
     }
 
     .sidebar-link {
-        @apply inline-flex shrink-0 items-center rounded-[12px] border-0 border-b border-slate-200/80 bg-transparent px-4 py-4 text-sm font-semibold text-slate-700 shadow-none transition duration-200 hover:bg-sky-50 hover:text-sky-700 xl:w-full xl:justify-start xl:px-5 xl:text-base;
+        @apply inline-flex shrink-0 items-center rounded-[10px] border border-slate-200/80 bg-white/90 px-4 py-4 text-sm font-semibold text-slate-700 shadow-[0_10px_24px_rgba(148,163,184,0.08)] transition duration-200 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700 xl:w-full xl:justify-start xl:px-5 xl:text-base;
     }
 
     .sidebar-link.is-active {
-        @apply border-transparent bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-none;
+        @apply rounded-[10px] border-transparent bg-blue-600 text-white shadow-none;
     }
 
     .content-area {
@@ -95,7 +92,7 @@
     }
 
     .hero-panel {
-        @apply relative overflow-hidden rounded-[30px] border border-white/80 bg-[linear-gradient(135deg,#0f172a_0%,#16253d_32%,#1d4ed8_100%)] p-6 text-white shadow-[0_28px_60px_rgba(15,23,42,0.24)] sm:p-8 xl:p-10;
+        @apply relative overflow-hidden rounded-[30px] border border-white/80 bg-slate-900 p-6 text-white shadow-[0_28px_60px_rgba(15,23,42,0.24)] sm:p-8 xl:p-10;
     }
 
     .hero-panel::after {
@@ -148,7 +145,7 @@
     }
 
     .primary-button {
-        @apply inline-flex min-h-12 items-center justify-center rounded-[10px] bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 text-sm font-bold text-white shadow-[0_18px_34px_rgba(37,99,235,0.28)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_22px_40px_rgba(37,99,235,0.34)];
+        @apply inline-flex min-h-12 items-center justify-center rounded-[10px] bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-[0_18px_34px_rgba(37,99,235,0.28)] transition duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-[0_22px_40px_rgba(37,99,235,0.34)];
     }
 
     .secondary-button {
