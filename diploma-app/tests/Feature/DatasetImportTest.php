@@ -251,4 +251,16 @@ class DatasetImportTest extends TestCase
             'trigger_source' => 'deepseek_fix',
         ]);
     }
+
+    public function test_fixing_missing_issue_redirects_back_to_list_instead_of_404(): void
+    {
+        $this->seed();
+
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/issues/999999/fix');
+
+        $response->assertRedirect('/issues');
+        $response->assertSessionHas('error');
+    }
 }

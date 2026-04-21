@@ -46,8 +46,14 @@ class IssueController extends Controller
         ]);
     }
 
-    public function fix(Issue $issue, DatasetAnalysisService $analysisService): RedirectResponse
+    public function fix(int $issue, DatasetAnalysisService $analysisService): RedirectResponse
     {
+        $issue = $this->resolveIssue($issue);
+
+        if (! $issue) {
+            return redirect('/issues')->with('error', 'Эта ошибка уже обновилась после новой проверки. Открой свежий список и попробуй снова.');
+        }
+
         Gate::authorize('update', $issue->dataset);
 
         if (! $issue->suggested_value || ! $issue->datasetRow || ! $issue->column_name) {
@@ -65,13 +71,28 @@ class IssueController extends Controller
         return back()->with('success', 'Значение исправлено, и таблица проверена заново.');
     }
 
-    public function ignore(Issue $issue, DatasetAnalysisService $analysisService): RedirectResponse
+    public function ignore(int $issue, DatasetAnalysisService $analysisService): RedirectResponse
     {
+        $issue = $this->resolveIssue($issue);
+
+        if (! $issue) {
+            return redirect('/issues')->with('error', 'Эта ошибка уже обновилась после новой проверки. Открой свежий список и попробуй снова.');
+        }
+
         Gate::authorize('update', $issue->dataset);
 
         $issue->update(['status' => 'ignored']);
         $analysisService->refreshDatasetSummary($issue->dataset);
 
         return back()->with('success', 'Ошибка отмечена как пропущенная.');
+    }
+
+    private function resolveIssue(int $issueId): ?Issue
+    {
+        return Issue::query()
+            ->whereKey($issueId)
+            ->whereIn('dataset_id', Auth::user()->datasets()->pluck('id'))
+            ->with(['dataset', 'datasetRow'])
+            ->first();
     }
 }
