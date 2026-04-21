@@ -40,21 +40,21 @@
 
 @layer components {
     .app-shell {
-        @apply relative mx-auto my-4 min-h-[calc(100vh-2rem)] max-w-[1480px] overflow-hidden rounded-[32px] border border-white/60 bg-white/70 shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur xl:my-6 xl:overflow-visible;
+        @apply relative mx-auto my-4 min-h-[calc(100vh-2rem)] max-w-[1680px] overflow-hidden rounded-[32px] border border-white/60 bg-white/70 shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur xl:my-6 xl:overflow-visible;
     }
 
     .app-shell::before {
         content: '';
-        @apply pointer-events-none absolute inset-x-0 top-0 h-40;
+        @apply pointer-events-none absolute inset-x-0 top-0 h-64;
         background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(14, 165, 233, 0.05) 45%, transparent 85%);
     }
 
     .app-header {
-        @apply relative flex flex-col gap-6 border-b border-slate-200/80 px-5 py-6 sm:px-6 lg:px-8 xl:grid xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start xl:gap-8 xl:px-10;
+        @apply relative flex flex-col gap-5 border-b border-slate-200/80 px-5 py-6 sm:px-6 lg:px-8 xl:grid xl:grid-cols-[minmax(0,1fr)_15rem] xl:items-start xl:justify-between xl:gap-8 xl:px-12;
     }
 
     .app-header-copy {
-        @apply min-w-0 max-w-none xl:pr-4;
+        @apply min-w-0 max-w-none;
     }
 
     .app-title {
@@ -62,20 +62,20 @@
     }
 
     .app-subtitle {
-        @apply mt-4 max-w-3xl text-sm leading-7 text-slate-600 md:text-base;
+        @apply mt-4 max-w-none text-sm leading-7 text-slate-600 md:text-base;
         overflow-wrap: anywhere;
     }
 
     .app-brand {
-        @apply flex w-full flex-col gap-2 rounded-[24px] border border-white/80 bg-white/80 px-5 py-4 text-slate-600 shadow-[0_16px_40px_rgba(148,163,184,0.14)] xl:max-w-none;
+        @apply flex w-full max-w-[15rem] flex-col gap-2 rounded-[24px] border border-white/80 bg-white/80 px-5 py-4 text-slate-600 shadow-[0_16px_40px_rgba(148,163,184,0.14)] xl:justify-self-end;
     }
 
     .app-body {
-        @apply grid min-h-[calc(100vh-11rem)] grid-cols-1 items-start xl:grid-cols-[290px_minmax(0,1fr)];
+        @apply grid min-h-[calc(100vh-11rem)] grid-cols-1 items-start gap-y-6 px-4 pb-4 sm:px-6 lg:px-8 xl:grid-cols-[290px_minmax(0,1fr)] xl:gap-6 xl:px-10 xl:pb-8;
     }
 
     .sidebar {
-        @apply border-b border-slate-200/80 bg-white/55 px-4 py-5 backdrop-blur sm:px-6 xl:sticky xl:top-6 xl:self-start xl:border-b-0 xl:border-r xl:px-6 xl:py-8;
+        @apply rounded-[28px] border border-white/80 bg-white/72 px-4 py-5 shadow-[0_18px_42px_rgba(148,163,184,0.10)] backdrop-blur sm:px-6 xl:sticky xl:top-6 xl:self-start xl:px-6 xl:py-8;
     }
 
     .sidebar-nav {
@@ -83,7 +83,7 @@
     }
 
     .sidebar-link {
-        @apply inline-flex shrink-0 items-center rounded-full border border-slate-200 bg-white/90 px-4 py-3 text-sm font-semibold text-slate-700 shadow-[0_10px_30px_rgba(148,163,184,0.10)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700 xl:w-full xl:justify-start xl:rounded-[22px] xl:px-5 xl:py-4 xl:text-base;
+        @apply inline-flex shrink-0 items-center rounded-[18px] border border-slate-200 bg-white/90 px-4 py-3 text-sm font-semibold text-slate-700 shadow-[0_10px_30px_rgba(148,163,184,0.10)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700 xl:w-full xl:justify-start xl:px-5 xl:py-4 xl:text-base;
     }
 
     .sidebar-link.is-active {
@@ -91,7 +91,7 @@
     }
 
     .content-area {
-        @apply relative px-4 py-5 sm:px-6 lg:px-8 lg:py-8 xl:px-10;
+        @apply relative p-0;
     }
 
     .hero-panel {
@@ -140,27 +140,31 @@
     }
 
     .text-field {
-        @apply h-14 w-full rounded-[20px] border border-slate-200 bg-white px-4 text-base text-slate-900 shadow-[0_10px_24px_rgba(148,163,184,0.08)] outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100;
+        @apply h-14 w-full rounded-[16px] border border-slate-200 bg-white px-4 text-base text-slate-900 shadow-[0_10px_24px_rgba(148,163,184,0.08)] outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100;
     }
 
     .text-area {
-        @apply min-h-36 w-full rounded-[22px] border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 shadow-[0_10px_24px_rgba(148,163,184,0.08)] outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100;
+        @apply min-h-36 w-full rounded-[16px] border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 shadow-[0_10px_24px_rgba(148,163,184,0.08)] outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100;
     }
 
     .primary-button {
-        @apply inline-flex min-h-12 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 text-sm font-bold text-white shadow-[0_18px_34px_rgba(37,99,235,0.28)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_22px_40px_rgba(37,99,235,0.34)];
+        @apply inline-flex min-h-12 items-center justify-center rounded-[16px] bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 text-sm font-bold text-white shadow-[0_18px_34px_rgba(37,99,235,0.28)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_22px_40px_rgba(37,99,235,0.34)];
     }
 
     .secondary-button {
-        @apply inline-flex min-h-12 items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 shadow-[0_12px_24px_rgba(148,163,184,0.10)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50;
+        @apply inline-flex min-h-12 items-center justify-center rounded-[16px] border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 shadow-[0_12px_24px_rgba(148,163,184,0.10)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50;
     }
 
     .danger-button {
-        @apply inline-flex min-h-12 items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-6 py-3 text-sm font-bold text-rose-700 shadow-[0_12px_24px_rgba(251,113,133,0.10)] transition duration-200 hover:-translate-y-0.5 hover:bg-rose-100;
+        @apply inline-flex min-h-12 items-center justify-center rounded-[16px] border border-rose-200 bg-rose-50 px-6 py-3 text-sm font-bold text-rose-700 shadow-[0_12px_24px_rgba(251,113,133,0.10)] transition duration-200 hover:-translate-y-0.5 hover:bg-rose-100;
     }
 
     .action-button {
-        @apply inline-flex min-w-36 justify-center;
+        @apply inline-flex w-full justify-center rounded-[16px] whitespace-nowrap sm:w-auto sm:min-w-28;
+    }
+
+    .table-actions {
+        @apply flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap;
     }
 
     .data-table {

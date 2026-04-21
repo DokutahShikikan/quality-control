@@ -81,14 +81,14 @@
                             <td>{{ $duplicate->rationale }}</td>
                             <td>{{ $statusLabels[$duplicate->status] ?? $duplicate->status }}</td>
                             <td>
-                                <div class="flex flex-wrap gap-2">
+                                <div class="table-actions">
                                     <form method="POST" action="/duplicates/{{ $duplicate->id }}/fix">
                                         @csrf
-                                        <button class="btn btn-sm rounded-none btn-primary action-button" type="submit" {{ $duplicate->status !== 'open' ? 'disabled' : '' }}>Удалить повтор</button>
+                                        <button class="btn btn-sm btn-primary action-button" type="submit" {{ $duplicate->status !== 'open' ? 'disabled' : '' }}>Удалить повтор</button>
                                     </form>
                                     <form method="POST" action="/duplicates/{{ $duplicate->id }}/ignore">
                                         @csrf
-                                        <button class="btn btn-sm rounded-none btn-ghost border border-slate-300 action-button" type="submit" {{ $duplicate->status !== 'open' ? 'disabled' : '' }}>Игнорировать</button>
+                                        <button class="btn btn-sm btn-ghost border border-slate-300 action-button" type="submit" {{ $duplicate->status !== 'open' ? 'disabled' : '' }}>Игнорировать</button>
                                     </form>
                                 </div>
                             </td>

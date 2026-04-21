@@ -120,7 +120,7 @@
                             <td>{{ $issue->suggested_value ?: 'Нет' }}</td>
                             <td>{{ $statusLabels[$issue->status] ?? $issue->status }}</td>
                             <td>
-                                <div class="flex flex-wrap gap-2">
+                                <div class="table-actions">
                                     <form method="POST" action="/issues/{{ $issue->id }}/fix">
                                         @csrf
                                         <input type="hidden" name="dataset_id" value="{{ $issue->dataset_id }}">
@@ -129,7 +129,7 @@
                                         <input type="hidden" name="suggested_value" value="{{ $issue->suggested_value }}">
                                         <span class="tooltip-trigger">
                                             <button
-                                                class="btn btn-sm rounded-none btn-primary action-button"
+                                                class="btn btn-sm btn-primary action-button"
                                                 type="submit"
                                                 aria-label="Исправить значение"
                                                 {{ $issue->status !== 'open' || ! $issue->suggested_value ? 'disabled' : '' }}
@@ -151,7 +151,7 @@
                                     </form>
                                     <form method="POST" action="/issues/{{ $issue->id }}/ignore">
                                         @csrf
-                                        <button class="btn btn-sm rounded-none btn-ghost border border-slate-300 action-button" type="submit" {{ $issue->status !== 'open' ? 'disabled' : '' }}>Пропустить</button>
+                                        <button class="btn btn-sm btn-ghost border border-slate-300 action-button" type="submit" {{ $issue->status !== 'open' ? 'disabled' : '' }}>Пропустить</button>
                                     </form>
                                 </div>
                             </td>
