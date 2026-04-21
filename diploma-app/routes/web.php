@@ -32,6 +32,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/duplicates/{duplicateCandidate}/fix', [DuplicateCandidateController::class, 'fix']);
     Route::post('/duplicates/{duplicateCandidate}/ignore', [DuplicateCandidateController::class, 'ignore']);
     Route::get('/autofix', [AutoFixController::class, 'index']);
+    Route::post('/autofix/{dataset}', [AutoFixController::class, 'run']);
 
     Route::delete('/logout', [SessionsController::class, 'destroy']);
 });

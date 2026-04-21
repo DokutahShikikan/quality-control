@@ -39,6 +39,7 @@ return [
         'base_url' => env('DEEPSEEK_BASE_URL', 'https://api.deepseek.com'),
         'api_key' => env('DEEPSEEK_API_KEY'),
         'model' => env('DEEPSEEK_MODEL', 'deepseek-chat'),
+        'verify_ssl' => env('DEEPSEEK_VERIFY_SSL', true),
     ],
 
 ];

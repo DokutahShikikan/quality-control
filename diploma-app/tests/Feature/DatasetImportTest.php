@@ -3,11 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\Dataset;
+use App\Models\DatasetRow;
 use App\Models\DuplicateCandidate;
 use App\Models\Issue;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class DatasetImportTest extends TestCase
@@ -158,5 +160,95 @@ class DatasetImportTest extends TestCase
         $response->assertOk();
         $response->assertJsonStructure(['issuesHtml', 'duplicatesHtml', 'statsHtml']);
         $this->assertStringContainsString('Последние ошибки', $response->json('issuesHtml'));
+    }
+
+    public function test_deepseek_autofix_updates_values_and_rechecks_dataset(): void
+    {
+        $this->seed();
+
+        config()->set('services.deepseek.api_key', 'test-key');
+        config()->set('services.deepseek.base_url', 'https://api.deepseek.com');
+        config()->set('services.deepseek.model', 'deepseek-chat');
+
+        Http::fake([
+            'https://api.deepseek.com/chat/completions' => Http::response([
+                'choices' => [[
+                    'message' => [
+                        'content' => json_encode([
+                            'corrected_value' => 'active',
+                            'should_fix' => true,
+                            'reason' => 'Normalized status typo.',
+                            'confidence' => 'high',
+                        ], JSON_UNESCAPED_UNICODE),
+                    ],
+                ]],
+            ], 200),
+        ]);
+
+        $user = User::factory()->create();
+        $dataset = Dataset::query()->create([
+            'user_id' => $user->id,
+            'name' => 'Проверка DeepSeek',
+            'description' => 'Таблица для ИИ-исправления',
+            'source_filename' => 'clients.csv',
+            'source_path' => 'imports/clients.csv',
+            'source_mime' => 'text/csv',
+            'import_status' => 'ready',
+            'review_status' => 'needs_review',
+            'headers' => ['status'],
+            'total_rows' => 1,
+            'total_columns' => 1,
+            'deepseek_enabled' => true,
+            'metrics' => [
+                'open_issues' => 1,
+                'fixable_issues' => 0,
+                'open_duplicates' => 0,
+                'deepseek_stage_ready' => true,
+            ],
+        ]);
+
+        $row = DatasetRow::query()->create([
+            'dataset_id' => $dataset->id,
+            'row_index' => 1,
+            'payload' => ['status' => 'actve'],
+            'is_active' => true,
+        ]);
+
+        $run = $dataset->checkRuns()->create([
+            'status' => 'completed',
+            'trigger_source' => 'manual',
+            'total_rows' => 1,
+            'issues_count' => 1,
+        ]);
+
+        Issue::query()->create([
+            'dataset_id' => $dataset->id,
+            'check_run_id' => $run->id,
+            'dataset_row_id' => $row->id,
+            'column_name' => 'status',
+            'issue_type' => 'invalid_format',
+            'severity' => 'medium',
+            'title' => 'Status format',
+            'message' => 'Статус не соответствует допустимым значениям.',
+            'original_value' => 'actve',
+            'suggested_value' => null,
+            'suggestion_source' => 'regex',
+            'status' => 'open',
+            'meta' => ['row_index' => 1],
+        ]);
+
+        $response = $this->actingAs($user)->post("/autofix/{$dataset->id}");
+
+        $response->assertRedirect();
+
+        $row->refresh();
+        $dataset->refresh();
+
+        $this->assertSame('active', $row->payload['status']);
+        $this->assertSame(0, (int) data_get($dataset->metrics, 'open_issues', 0));
+        $this->assertDatabaseHas('check_runs', [
+            'dataset_id' => $dataset->id,
+            'trigger_source' => 'deepseek_fix',
+        ]);
     }
 }
