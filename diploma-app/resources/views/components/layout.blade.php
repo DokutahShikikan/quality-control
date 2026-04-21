@@ -17,12 +17,6 @@
                         <div class="mt-1">Исправляйте найденные проблемы понятными действиями.</div>
                     </div>
                 </div>
-
-                <div class="app-brand">
-                    <div class="text-xs uppercase tracking-[0.35em] text-slate-500">Проверка данных</div>
-                    <div class="text-lg font-bold text-slate-800">Сначала понятные ошибки, потом ИИ</div>
-                    <div class="text-sm text-slate-500">Рабочее место для разбора загруженных таблиц</div>
-                </div>
             </header>
 
             <div class="app-body">
