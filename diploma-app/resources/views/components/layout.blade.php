@@ -11,13 +11,13 @@
         <div class="app-shell">
             <header class="app-header">
                 <div class="app-header-copy">
-                    <p class="badge badge-neutral badge-outline mb-3 rounded-full px-4 py-3">Проверка таблиц без ручной рутины</p>
                     <h1 class="app-title">{{ $title ?: 'Система проверки качества данных' }}</h1>
-                    <p class="app-subtitle">
-                        Загружайте таблицы, находите пустые ячейки, неверные форматы и повторы.
-                        Исправляйте найденные проблемы понятными действиями.
-                    </p>
+                    <div class="app-subtitle">
+                        <div>Загружайте таблицы, находите пустые ячейки, неверные форматы и повторы.</div>
+                        <div class="mt-1">Исправляйте найденные проблемы понятными действиями.</div>
+                    </div>
                 </div>
+
                 <div class="app-brand">
                     <div class="text-xs uppercase tracking-[0.35em] text-slate-500">Проверка данных</div>
                     <div class="text-lg font-bold text-slate-800">Сначала понятные ошибки, потом ИИ</div>
