@@ -20,16 +20,6 @@
         background: #eef4fb;
     }
 
-    body::before {
-        content: '';
-        @apply pointer-events-none fixed inset-0 opacity-60;
-        background-image:
-            linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
-        background-size: 44px 44px;
-        mask-image: radial-gradient(circle at center, black 42%, transparent 92%);
-    }
-
     a {
         @apply text-inherit no-underline;
     }
@@ -37,7 +27,7 @@
 
 @layer components {
     .app-shell {
-        @apply relative mx-auto mb-4 min-h-[calc(100vh-1rem)] max-w-[1680px] overflow-hidden rounded-[32px] border border-white/60 bg-white/70 shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur xl:mb-6 xl:overflow-visible;
+        @apply relative mx-auto mb-4 min-h-screen max-w-[1680px] overflow-hidden rounded-[32px] border border-white/60 bg-white/70 shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur xl:mb-6 xl:overflow-visible;
     }
 
     .app-shell::before {
@@ -68,7 +58,7 @@
     }
 
     .app-body {
-        @apply grid min-h-[calc(100vh-11rem)] grid-cols-1 items-start gap-y-6 px-4 pb-4 sm:px-6 lg:px-8 xl:grid-cols-[290px_minmax(0,1fr)] xl:gap-6 xl:px-10 xl:pb-8;
+        @apply grid grid-cols-1 items-start gap-y-6 px-4 pb-4 sm:px-6 lg:px-8 xl:grid-cols-[290px_minmax(0,1fr)] xl:gap-6 xl:px-10 xl:pb-8;
     }
 
     .sidebar {
@@ -152,6 +142,10 @@
         @apply inline-flex min-h-12 items-center justify-center rounded-[10px] border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 shadow-[0_12px_24px_rgba(148,163,184,0.10)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50;
     }
 
+    .logout-button {
+        @apply inline-flex min-h-12 items-center justify-center rounded-[10px] border border-rose-200 bg-rose-50 px-6 py-3 text-sm font-bold text-rose-700 shadow-[0_12px_24px_rgba(251,113,133,0.10)] transition duration-200 hover:-translate-y-0.5 hover:border-rose-300 hover:bg-rose-100;
+    }
+
     .danger-button {
         @apply inline-flex min-h-12 items-center justify-center rounded-[10px] border border-rose-200 bg-rose-50 px-6 py-3 text-sm font-bold text-rose-700 shadow-[0_12px_24px_rgba(251,113,133,0.10)] transition duration-200 hover:-translate-y-0.5 hover:bg-rose-100;
     }
@@ -209,7 +203,7 @@
     }
 
     .tooltip-card {
-        @apply pointer-events-none invisible absolute bottom-[calc(100%+0.75rem)] right-0 z-20 w-72 rounded-[22px] border border-slate-200 bg-white/95 p-4 text-left opacity-0 shadow-[0_20px_40px_rgba(15,23,42,0.16)] transition duration-150;
+        @apply pointer-events-none invisible absolute right-0 bottom-full z-20 mb-3 w-72 rounded-[22px] border border-slate-200 bg-white/95 p-4 text-left opacity-0 shadow-[0_20px_40px_rgba(15,23,42,0.16)] transition duration-150;
     }
 
     .tooltip-card::before {

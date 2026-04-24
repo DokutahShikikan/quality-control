@@ -21,7 +21,7 @@
         <form method="POST" action="/logout" class="mt-4">
             @csrf
             @method('DELETE')
-            <button class="secondary-button w-full" type="submit">Выйти</button>
+            <button class="logout-button w-full" type="submit">Выйти</button>
         </form>
     @else
         <div class="mt-5 grid gap-3">
