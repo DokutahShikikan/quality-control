@@ -26,6 +26,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/rules', [QualityRuleController::class, 'index']);
     Route::get('/checks', [CheckRunController::class, 'index']);
     Route::get('/issues', [IssueController::class, 'index']);
+    Route::get('/issues/table', [IssueController::class, 'table']);
     Route::post('/issues/{issue}/fix', [IssueController::class, 'fix']);
     Route::post('/issues/{issue}/fix-similar', [IssueController::class, 'fixSimilar']);
     Route::post('/issues/{issue}/ignore', [IssueController::class, 'ignore']);

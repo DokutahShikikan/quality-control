@@ -471,4 +471,124 @@ class DatasetImportTest extends TestCase
         $this->assertFalse($firstDuplicateRow->is_active);
         $this->assertFalse($secondDuplicateRow->is_active);
     }
+
+    public function test_issues_table_partial_returns_html(): void
+    {
+        $this->seed();
+
+        $user = User::factory()->create();
+        $dataset = Dataset::query()->create([
+            'user_id' => $user->id,
+            'name' => 'Частичный список ошибок',
+            'description' => 'Проверка partial-обновления',
+            'source_filename' => 'clients.csv',
+            'source_path' => 'imports/clients.csv',
+            'source_mime' => 'text/csv',
+            'import_status' => 'ready',
+            'review_status' => 'needs_review',
+            'headers' => ['status'],
+            'metrics' => ['open_issues' => 1],
+        ]);
+
+        $run = $dataset->checkRuns()->create([
+            'status' => 'completed',
+            'trigger_source' => 'manual',
+            'total_rows' => 1,
+            'issues_count' => 1,
+        ]);
+
+        $row = DatasetRow::query()->create([
+            'dataset_id' => $dataset->id,
+            'row_index' => 1,
+            'payload' => ['status' => 'actve'],
+            'is_active' => true,
+        ]);
+
+        Issue::query()->create([
+            'dataset_id' => $dataset->id,
+            'check_run_id' => $run->id,
+            'dataset_row_id' => $row->id,
+            'column_name' => 'status',
+            'issue_type' => 'invalid_format',
+            'severity' => 'medium',
+            'title' => 'Status format',
+            'message' => 'Ошибка в статусе.',
+            'original_value' => 'actve',
+            'suggested_value' => 'active',
+            'suggestion_source' => 'regex',
+            'status' => 'open',
+            'meta' => ['row_index' => 1],
+        ]);
+
+        $response = $this->actingAs($user)->get('/issues/table');
+
+        $response->assertOk();
+        $response->assertSee('Действия');
+        $response->assertSee('Исправить');
+    }
+
+    public function test_issue_fix_returns_json_for_ajax_requests(): void
+    {
+        $this->seed();
+
+        $user = User::factory()->create();
+        $dataset = Dataset::query()->create([
+            'user_id' => $user->id,
+            'name' => 'Ajax ошибки',
+            'description' => 'Проверка JSON-ответа',
+            'source_filename' => 'clients.csv',
+            'source_path' => 'imports/clients.csv',
+            'source_mime' => 'text/csv',
+            'import_status' => 'ready',
+            'review_status' => 'needs_review',
+            'headers' => ['status'],
+            'metrics' => ['open_issues' => 1],
+        ]);
+
+        $run = $dataset->checkRuns()->create([
+            'status' => 'completed',
+            'trigger_source' => 'manual',
+            'total_rows' => 1,
+            'issues_count' => 1,
+        ]);
+
+        $row = DatasetRow::query()->create([
+            'dataset_id' => $dataset->id,
+            'row_index' => 1,
+            'payload' => ['status' => 'actve'],
+            'is_active' => true,
+        ]);
+
+        $issue = Issue::query()->create([
+            'dataset_id' => $dataset->id,
+            'check_run_id' => $run->id,
+            'dataset_row_id' => $row->id,
+            'column_name' => 'status',
+            'issue_type' => 'invalid_format',
+            'severity' => 'medium',
+            'title' => 'Status format',
+            'message' => 'Ошибка в статусе.',
+            'original_value' => 'actve',
+            'suggested_value' => 'active',
+            'suggestion_source' => 'regex',
+            'status' => 'open',
+            'meta' => ['row_index' => 1],
+        ]);
+
+        $response = $this->actingAs($user)
+            ->withHeader('X-Requested-With', 'XMLHttpRequest')
+            ->withHeader('Accept', 'application/json')
+            ->post("/issues/{$issue->id}/fix", [
+                'dataset_id' => $dataset->id,
+                'dataset_row_id' => $row->id,
+                'column_name' => 'status',
+                'suggested_value' => 'active',
+            ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'status' => 'success',
+            'message' => 'Значение исправлено, и таблица проверена заново.',
+        ]);
+    }
 }
