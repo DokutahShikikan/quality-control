@@ -30,7 +30,7 @@
                                 && data_get($dataset->metrics, 'deepseek_stage_ready', false);
                         @endphp
 
-                        <section class="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
+                        <section class="flex h-full flex-col rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
                             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                 <div class="min-w-0">
                                     <h4 class="text-xl font-black text-slate-900">{{ $dataset->name }}</h4>
@@ -61,7 +61,7 @@
                                 @endif
                             </p>
 
-                            <div class="mt-5 flex flex-wrap gap-3">
+                            <div class="mt-auto flex flex-wrap gap-3 pt-5">
                                 <form method="POST" action="/autofix/{{ $dataset->id }}">
                                     @csrf
                                     <button class="primary-button" type="submit" @disabled(! $canRun)>Запустить исправление через ИИ</button>

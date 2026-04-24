@@ -158,6 +158,22 @@
         @apply flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap;
     }
 
+    .table-action-form {
+        @apply w-full sm:flex-1;
+    }
+
+    .table-action-form .action-button {
+        @apply sm:w-full;
+    }
+
+    .table-primary-button {
+        @apply inline-flex min-h-10 w-full items-center justify-center rounded-[10px] bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-[0_14px_26px_rgba(37,99,235,0.24)] transition duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .table-secondary-button {
+        @apply inline-flex min-h-10 w-full items-center justify-center rounded-[10px] border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-[0_10px_22px_rgba(148,163,184,0.10)] transition duration-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
     .data-table {
         @apply w-full min-w-[720px] border-separate border-spacing-0 overflow-hidden text-left;
     }
