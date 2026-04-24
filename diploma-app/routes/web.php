@@ -27,9 +27,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/checks', [CheckRunController::class, 'index']);
     Route::get('/issues', [IssueController::class, 'index']);
     Route::post('/issues/{issue}/fix', [IssueController::class, 'fix']);
+    Route::post('/issues/{issue}/fix-similar', [IssueController::class, 'fixSimilar']);
     Route::post('/issues/{issue}/ignore', [IssueController::class, 'ignore']);
     Route::get('/duplicates', [DuplicateCandidateController::class, 'index']);
     Route::post('/duplicates/{duplicateCandidate}/fix', [DuplicateCandidateController::class, 'fix']);
+    Route::post('/duplicates/{duplicateCandidate}/fix-group', [DuplicateCandidateController::class, 'fixGroup']);
     Route::post('/duplicates/{duplicateCandidate}/ignore', [DuplicateCandidateController::class, 'ignore']);
     Route::get('/autofix', [AutoFixController::class, 'index']);
     Route::post('/autofix/{dataset}', [AutoFixController::class, 'run']);

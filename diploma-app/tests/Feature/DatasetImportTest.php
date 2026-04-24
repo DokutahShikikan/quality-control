@@ -308,4 +308,167 @@ class DatasetImportTest extends TestCase
             'trigger_source' => 'regex_fix',
         ]);
     }
+
+    public function test_user_can_fix_all_similar_issues(): void
+    {
+        $this->seed();
+
+        $user = User::factory()->create();
+        $dataset = Dataset::query()->create([
+            'user_id' => $user->id,
+            'name' => 'Массовые ошибки',
+            'description' => 'Проверка массового исправления',
+            'source_filename' => 'clients.csv',
+            'source_path' => 'imports/clients.csv',
+            'source_mime' => 'text/csv',
+            'import_status' => 'ready',
+            'review_status' => 'needs_review',
+            'headers' => ['status'],
+            'total_rows' => 2,
+            'total_columns' => 1,
+            'metrics' => ['open_issues' => 2],
+        ]);
+
+        $run = $dataset->checkRuns()->create([
+            'status' => 'completed',
+            'trigger_source' => 'manual',
+            'total_rows' => 2,
+            'issues_count' => 2,
+        ]);
+
+        $firstRow = DatasetRow::query()->create([
+            'dataset_id' => $dataset->id,
+            'row_index' => 1,
+            'payload' => ['status' => 'actve'],
+            'is_active' => true,
+        ]);
+
+        $secondRow = DatasetRow::query()->create([
+            'dataset_id' => $dataset->id,
+            'row_index' => 2,
+            'payload' => ['status' => 'actve'],
+            'is_active' => true,
+        ]);
+
+        $issue = Issue::query()->create([
+            'dataset_id' => $dataset->id,
+            'check_run_id' => $run->id,
+            'dataset_row_id' => $firstRow->id,
+            'column_name' => 'status',
+            'issue_type' => 'invalid_format',
+            'severity' => 'medium',
+            'title' => 'Status format',
+            'message' => 'Ошибка в статусе.',
+            'original_value' => 'actve',
+            'suggested_value' => 'active',
+            'suggestion_source' => 'regex',
+            'status' => 'open',
+            'meta' => ['row_index' => 1],
+        ]);
+
+        Issue::query()->create([
+            'dataset_id' => $dataset->id,
+            'check_run_id' => $run->id,
+            'dataset_row_id' => $secondRow->id,
+            'column_name' => 'status',
+            'issue_type' => 'invalid_format',
+            'severity' => 'medium',
+            'title' => 'Status format',
+            'message' => 'Ошибка в статусе.',
+            'original_value' => 'actve',
+            'suggested_value' => 'active',
+            'suggestion_source' => 'regex',
+            'status' => 'open',
+            'meta' => ['row_index' => 2],
+        ]);
+
+        $response = $this->actingAs($user)->post("/issues/{$issue->id}/fix-similar");
+
+        $response->assertRedirect();
+
+        $firstRow->refresh();
+        $secondRow->refresh();
+
+        $this->assertSame('active', $firstRow->payload['status']);
+        $this->assertSame('active', $secondRow->payload['status']);
+    }
+
+    public function test_user_can_delete_all_duplicates_for_same_primary_row(): void
+    {
+        $this->seed();
+
+        $user = User::factory()->create();
+        $dataset = Dataset::query()->create([
+            'user_id' => $user->id,
+            'name' => 'Массовые повторы',
+            'description' => 'Проверка удаления повторов',
+            'source_filename' => 'clients.csv',
+            'source_path' => 'imports/clients.csv',
+            'source_mime' => 'text/csv',
+            'import_status' => 'ready',
+            'review_status' => 'needs_review',
+            'headers' => ['email'],
+            'total_rows' => 3,
+            'total_columns' => 1,
+            'metrics' => ['open_duplicates' => 2],
+        ]);
+
+        $run = $dataset->checkRuns()->create([
+            'status' => 'completed',
+            'trigger_source' => 'manual',
+            'total_rows' => 3,
+            'issues_count' => 0,
+        ]);
+
+        $primaryRow = DatasetRow::query()->create([
+            'dataset_id' => $dataset->id,
+            'row_index' => 1,
+            'payload' => ['email' => 'shared@example.com'],
+            'is_active' => true,
+        ]);
+
+        $firstDuplicateRow = DatasetRow::query()->create([
+            'dataset_id' => $dataset->id,
+            'row_index' => 2,
+            'payload' => ['email' => 'shared@example.com'],
+            'is_active' => true,
+        ]);
+
+        $secondDuplicateRow = DatasetRow::query()->create([
+            'dataset_id' => $dataset->id,
+            'row_index' => 3,
+            'payload' => ['email' => 'shared@example.com'],
+            'is_active' => true,
+        ]);
+
+        $duplicate = DuplicateCandidate::query()->create([
+            'dataset_id' => $dataset->id,
+            'check_run_id' => $run->id,
+            'primary_row_id' => $primaryRow->id,
+            'duplicate_row_id' => $firstDuplicateRow->id,
+            'confidence' => 1,
+            'rationale' => 'Совпадает адрес электронной почты.',
+            'status' => 'open',
+        ]);
+
+        DuplicateCandidate::query()->create([
+            'dataset_id' => $dataset->id,
+            'check_run_id' => $run->id,
+            'primary_row_id' => $primaryRow->id,
+            'duplicate_row_id' => $secondDuplicateRow->id,
+            'confidence' => 1,
+            'rationale' => 'Совпадает адрес электронной почты.',
+            'status' => 'open',
+        ]);
+
+        $response = $this->actingAs($user)->post("/duplicates/{$duplicate->id}/fix-group");
+
+        $response->assertRedirect();
+
+        $firstDuplicateRow->refresh();
+        $secondDuplicateRow->refresh();
+
+        $this->assertFalse($firstDuplicateRow->is_active);
+        $this->assertFalse($secondDuplicateRow->is_active);
+    }
 }

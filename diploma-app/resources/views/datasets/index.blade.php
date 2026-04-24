@@ -24,7 +24,7 @@
                         <p class="mt-2 text-sm leading-6 text-blue-100">Пустые ячейки и неверные форматы, которые можно разобрать сразу.</p>
                     </div>
                     <div class="rounded-[24px] border border-white/15 bg-white/10 p-5 backdrop-blur">
-                        <div class="text-xs font-bold uppercase tracking-[0.2em] text-blue-100">Похожие строки</div>
+                        <div class="text-xs font-bold uppercase tracking-[0.2em] text-blue-100">Повторы строк</div>
                         <div class="mt-3 text-3xl font-black text-white">{{ $metrics['open_duplicates'] }}</div>
                         <p class="mt-2 text-sm leading-6 text-blue-100">Найденные повторы, которые нужно проверить и оставить одну верную строку.</p>
                     </div>

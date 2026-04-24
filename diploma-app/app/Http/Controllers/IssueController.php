@@ -9,6 +9,7 @@ use App\Services\DatasetAnalysisService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class IssueController extends Controller
@@ -89,6 +90,47 @@ class IssueController extends Controller
         return back()->with('success', 'Ошибка отмечена как пропущенная.');
     }
 
+    public function fixSimilar(int $issue, DatasetAnalysisService $analysisService): RedirectResponse
+    {
+        $issue = $this->resolveIssue($issue);
+
+        if (! $issue) {
+            return redirect('/issues')->with('error', 'Эта ошибка уже обновилась после новой проверки. Открой свежий список и попробуй снова.');
+        }
+
+        Gate::authorize('update', $issue->dataset);
+
+        if (! $issue->suggested_value || ! $issue->column_name) {
+            return back()->with('error', 'Для этой ошибки нет безопасного автоматического исправления по шаблону.');
+        }
+
+        $similarIssues = $this->similarIssuesQuery($issue)
+            ->with('datasetRow')
+            ->get();
+
+        if ($similarIssues->isEmpty()) {
+            return back()->with('error', 'Похожих открытых ошибок для массового исправления не найдено.');
+        }
+
+        DB::transaction(function () use ($similarIssues, $issue) {
+            foreach ($similarIssues as $similarIssue) {
+                if (! $similarIssue->datasetRow) {
+                    continue;
+                }
+
+                $payload = $similarIssue->datasetRow->payload;
+                $payload[$issue->column_name] = $issue->suggested_value;
+
+                $similarIssue->datasetRow->update(['payload' => $payload]);
+                $similarIssue->update(['status' => 'fixed']);
+            }
+        });
+
+        $analysisService->analyze($issue->dataset, 'regex_fix');
+
+        return back()->with('success', 'Все подобные ошибки исправлены, и таблица проверена заново.');
+    }
+
     private function resolveIssue(int $issueId): ?Issue
     {
         return Issue::query()
@@ -137,5 +179,24 @@ class IssueController extends Controller
         $analysisService->analyze($dataset, 'regex_fix');
 
         return redirect('/issues')->with('success', 'Значение исправлено, и таблица проверена заново.');
+    }
+
+    private function similarIssuesQuery(Issue $issue)
+    {
+        return Issue::query()
+            ->where('dataset_id', $issue->dataset_id)
+            ->where('status', 'open')
+            ->where('issue_type', $issue->issue_type)
+            ->where('column_name', $issue->column_name)
+            ->where('suggested_value', $issue->suggested_value)
+            ->where(function ($query) use ($issue) {
+                if ($issue->original_value === null) {
+                    $query->whereNull('original_value');
+
+                    return;
+                }
+
+                $query->where('original_value', $issue->original_value);
+            });
     }
 }

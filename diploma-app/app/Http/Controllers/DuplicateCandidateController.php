@@ -7,6 +7,7 @@ use App\Services\DatasetAnalysisService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class DuplicateCandidateController extends Controller
@@ -60,5 +61,35 @@ class DuplicateCandidateController extends Controller
         $analysisService->refreshDatasetSummary($duplicateCandidate->dataset);
 
         return back()->with('success', 'Повтор отмечен как пропущенный.');
+    }
+
+    public function fixGroup(DuplicateCandidate $duplicateCandidate, DatasetAnalysisService $analysisService): RedirectResponse
+    {
+        Gate::authorize('update', $duplicateCandidate->dataset);
+
+        $groupDuplicates = DuplicateCandidate::query()
+            ->where('dataset_id', $duplicateCandidate->dataset_id)
+            ->where('primary_row_id', $duplicateCandidate->primary_row_id)
+            ->where('status', 'open')
+            ->with('duplicateRow')
+            ->get();
+
+        if ($groupDuplicates->isEmpty()) {
+            return back()->with('error', 'Открытых повторов для этой строки уже не осталось.');
+        }
+
+        DB::transaction(function () use ($groupDuplicates) {
+            foreach ($groupDuplicates as $groupDuplicate) {
+                if ($groupDuplicate->duplicateRow) {
+                    $groupDuplicate->duplicateRow->update(['is_active' => false]);
+                }
+
+                $groupDuplicate->update(['status' => 'fixed']);
+            }
+        });
+
+        $analysisService->analyze($duplicateCandidate->dataset, 'duplicate_resolution');
+
+        return back()->with('success', 'Все повторы для этой строки удалены, и таблица проверена заново.');
     }
 }

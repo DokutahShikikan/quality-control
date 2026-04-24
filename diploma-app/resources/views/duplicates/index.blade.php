@@ -64,7 +64,7 @@
                     <tr>
                         <th>Таблица</th>
                         <th>Основная строка</th>
-                        <th>Похожая строка</th>
+                        <th>Повторяющаяся строка</th>
                         <th>Уверенность</th>
                         <th>Почему это повтор</th>
                         <th>Состояние</th>
@@ -82,13 +82,17 @@
                             <td>{{ $statusLabels[$duplicate->status] ?? $duplicate->status }}</td>
                             <td>
                                 <div class="table-actions">
-                                    <form method="POST" action="/duplicates/{{ $duplicate->id }}/fix">
+                                    <form method="POST" action="/duplicates/{{ $duplicate->id }}/fix" class="table-action-form">
                                         @csrf
-                                        <button class="btn btn-sm btn-primary action-button" type="submit" {{ $duplicate->status !== 'open' ? 'disabled' : '' }}>Удалить повтор</button>
+                                        <button class="table-primary-button action-button" type="submit" {{ $duplicate->status !== 'open' ? 'disabled' : '' }}>Удалить повтор</button>
                                     </form>
-                                    <form method="POST" action="/duplicates/{{ $duplicate->id }}/ignore">
+                                    <form method="POST" action="/duplicates/{{ $duplicate->id }}/fix-group" class="table-action-form">
                                         @csrf
-                                        <button class="btn btn-sm btn-ghost border border-slate-300 action-button" type="submit" {{ $duplicate->status !== 'open' ? 'disabled' : '' }}>Игнорировать</button>
+                                        <button class="table-secondary-button action-button" type="submit" {{ $duplicate->status !== 'open' ? 'disabled' : '' }}>Удалить все повторы</button>
+                                    </form>
+                                    <form method="POST" action="/duplicates/{{ $duplicate->id }}/ignore" class="table-action-form">
+                                        @csrf
+                                        <button class="table-secondary-button action-button" type="submit" {{ $duplicate->status !== 'open' ? 'disabled' : '' }}>Игнорировать</button>
                                     </form>
                                 </div>
                             </td>

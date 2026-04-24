@@ -121,7 +121,7 @@
                             <td>{{ $statusLabels[$issue->status] ?? $issue->status }}</td>
                             <td>
                                 <div class="table-actions">
-                                    <form method="POST" action="/issues/{{ $issue->id }}/fix">
+                                    <form method="POST" action="/issues/{{ $issue->id }}/fix" class="table-action-form">
                                         @csrf
                                         <input type="hidden" name="dataset_id" value="{{ $issue->dataset_id }}">
                                         <input type="hidden" name="dataset_row_id" value="{{ $issue->dataset_row_id }}">
@@ -129,7 +129,7 @@
                                         <input type="hidden" name="suggested_value" value="{{ $issue->suggested_value }}">
                                         <span class="tooltip-trigger">
                                             <button
-                                                class="btn btn-sm btn-primary action-button"
+                                                class="table-primary-button action-button"
                                                 type="submit"
                                                 aria-label="Исправить значение"
                                                 {{ $issue->status !== 'open' || ! $issue->suggested_value ? 'disabled' : '' }}
@@ -149,9 +149,13 @@
                                             @endif
                                         </span>
                                     </form>
-                                    <form method="POST" action="/issues/{{ $issue->id }}/ignore">
+                                    <form method="POST" action="/issues/{{ $issue->id }}/fix-similar" class="table-action-form">
                                         @csrf
-                                        <button class="btn btn-sm btn-ghost border border-slate-300 action-button" type="submit" {{ $issue->status !== 'open' ? 'disabled' : '' }}>Пропустить</button>
+                                        <button class="table-secondary-button action-button" type="submit" {{ $issue->status !== 'open' || ! $issue->suggested_value ? 'disabled' : '' }}>Исправить все подобные ошибки</button>
+                                    </form>
+                                    <form method="POST" action="/issues/{{ $issue->id }}/ignore" class="table-action-form">
+                                        @csrf
+                                        <button class="table-secondary-button action-button" type="submit" {{ $issue->status !== 'open' ? 'disabled' : '' }}>Пропустить</button>
                                     </form>
                                 </div>
                             </td>
