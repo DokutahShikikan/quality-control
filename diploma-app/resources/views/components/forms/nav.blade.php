@@ -4,8 +4,7 @@
     <nav class="sidebar-nav">
         <a href="/datasets" class="sidebar-link {{ $current === 'datasets' ? 'is-active' : '' }}">Таблицы</a>
         <a href="/datasets/create" class="sidebar-link {{ $current === 'import' ? 'is-active' : '' }}">Загрузка</a>
-        <a href="/issues" class="sidebar-link {{ $current === 'issues' ? 'is-active' : '' }}">Ошибки</a>
-        <a href="/duplicates" class="sidebar-link {{ $current === 'duplicates' ? 'is-active' : '' }}">Повторы</a>
+        <a href="/issues" class="sidebar-link {{ in_array($current, ['issues', 'duplicates'], true) ? 'is-active' : '' }}">Конфликты</a>
         <a href="/autofix" class="sidebar-link {{ $current === 'autofix' ? 'is-active' : '' }}">Помощь ИИ</a>
         <a href="/rules" class="sidebar-link {{ $current === 'rules' ? 'is-active' : '' }}">Шаблоны проверки</a>
         <a href="/checks" class="sidebar-link {{ $current === 'checks' ? 'is-active' : '' }}">История таблиц</a>

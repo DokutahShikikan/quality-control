@@ -104,8 +104,24 @@
         @apply rounded-[28px] border border-white/80 bg-white/88 p-6 shadow-[0_18px_42px_rgba(148,163,184,0.12)] backdrop-blur;
     }
 
+    .conflicts-panel {
+        @apply p-5 md:p-6;
+    }
+
     .panel-title {
         @apply text-2xl font-black tracking-tight text-slate-950 md:text-3xl;
+    }
+
+    .conflicts-tabs {
+        @apply inline-flex w-full rounded-[18px] border border-slate-200/80 bg-slate-100/90 p-1.5 shadow-[0_10px_24px_rgba(148,163,184,0.08)] md:w-auto;
+    }
+
+    .conflicts-tab {
+        @apply inline-flex min-h-11 flex-1 items-center justify-center rounded-[14px] px-5 py-3 text-sm font-bold text-slate-600 transition duration-200 hover:text-slate-900 md:min-w-36;
+    }
+
+    .conflicts-tab.is-active {
+        @apply bg-white text-blue-700 shadow-[0_10px_24px_rgba(148,163,184,0.12)];
     }
 
     .soft-title {

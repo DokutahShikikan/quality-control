@@ -35,6 +35,12 @@
                         </div>
                     @endif
 
+
+                    @if(in_array($current, ['issues', 'duplicates'], true))
+                        <div class="mb-6">
+                            <x-conflicts-tabs :current="$current" />
+                        </div>
+                    @endif
                     {{ $slot }}
                 </main>
             </div>
