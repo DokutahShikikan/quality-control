@@ -11,7 +11,7 @@
         <a href="/issues" class="secondary-button">Все ошибки</a>
     </x-section-header>
 
-    <x-data-table class="mt-6">
+    <x-data-table class="mt-6" sticky>
         <thead>
             <tr>
                 <th>Колонка</th>

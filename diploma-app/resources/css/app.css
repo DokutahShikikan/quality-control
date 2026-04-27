@@ -27,7 +27,7 @@
 
 @layer components {
     .app-shell {
-        @apply relative mx-auto mb-4 min-h-screen max-w-[1680px] overflow-hidden rounded-[32px] border border-white/60 bg-white/70 shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur xl:mb-6 xl:overflow-visible;
+        @apply relative mx-auto mb-4 min-h-screen max-w-[1680px] overflow-visible rounded-[32px] border border-white/60 bg-white/70 shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur xl:mb-6;
     }
 
     .app-header {
@@ -213,7 +213,31 @@
     }
 
     .data-table th {
-        @apply sticky top-0 z-20 border-b border-slate-200 bg-slate-50/95 px-4 py-4 text-sm font-extrabold uppercase tracking-[0.12em] text-slate-600 backdrop-blur;
+        @apply border-b border-slate-200 bg-slate-50/90 px-4 py-4 text-sm font-extrabold uppercase tracking-[0.12em] text-slate-600;
+    }
+
+    .data-table-wrap.is-sticky-head .data-table th {
+        @apply bg-slate-50/95 backdrop-blur;
+    }
+
+    .floating-table-head {
+        @apply pointer-events-none fixed left-0 top-0 z-40 hidden;
+    }
+
+    .floating-table-head.is-visible {
+        @apply block;
+    }
+
+    .floating-table-head__viewport {
+        @apply overflow-hidden rounded-t-[22px] border border-white/80 bg-white/92 shadow-[0_18px_42px_rgba(148,163,184,0.16)] backdrop-blur;
+    }
+
+    .floating-table-head__table {
+        @apply min-w-[720px] border-separate border-spacing-0 text-left;
+    }
+
+    .floating-table-head__table th {
+        @apply border-b border-slate-200 bg-slate-50/95 px-4 py-4 text-sm font-extrabold uppercase tracking-[0.12em] text-slate-600 backdrop-blur;
         box-shadow: inset 0 -1px 0 rgba(226, 232, 240, 0.95), 0 10px 18px rgba(148, 163, 184, 0.08);
     }
 

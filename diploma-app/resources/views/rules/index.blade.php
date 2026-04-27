@@ -23,7 +23,7 @@
         </section>
 
         <div class="panel">
-            <x-data-table>
+            <x-data-table sticky>
                 <thead>
                     <tr>
                         <th>Проверка</th>

@@ -77,7 +77,7 @@
                 </div>
             @endif
 
-            <x-data-table>
+            <x-data-table sticky>
                 <thead>
                     <tr>
                         <th>Таблица</th>

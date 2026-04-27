@@ -59,7 +59,7 @@
                 </div>
             @endif
 
-            <x-data-table>
+            <x-data-table sticky>
                 <thead>
                     <tr>
                         <th>Таблица</th>
@@ -81,7 +81,7 @@
                             <td>{{ $duplicate->rationale }}</td>
                             <td>{{ $statusLabels[$duplicate->status] ?? $duplicate->status }}</td>
                             <td>
-                                <div class="table-actions">
+                                <div class="table-actions duplicate-actions">
                                     <form method="POST" action="/duplicates/{{ $duplicate->id }}/fix" class="table-action-form">
                                         @csrf
                                         <button class="table-primary-button action-button" type="submit" {{ $duplicate->status !== 'open' ? 'disabled' : '' }}>Удалить повтор</button>

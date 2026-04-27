@@ -10,7 +10,7 @@
         </div>
     @endif
 
-    <x-data-table>
+    <x-data-table sticky>
         <thead>
             <tr>
                 <th>Таблица</th>
@@ -25,10 +25,6 @@
         </thead>
         <tbody>
             @forelse($issues as $issue)
-                @php
-                    $currentValue = $issue->original_value ?: 'Пусто';
-                    $nextValue = $issue->suggested_value ?: 'Нет безопасного автоматического исправления';
-                @endphp
                 <tr>
                     <td><a href="/datasets/{{ $issue->dataset_id }}" class="link link-hover">{{ $issue->dataset->name }}</a></td>
                     <td>#{{ data_get($issue->meta, 'row_index', '-') }}</td>
@@ -45,27 +41,12 @@
                                 <input type="hidden" name="dataset_row_id" value="{{ $issue->dataset_row_id }}">
                                 <input type="hidden" name="column_name" value="{{ $issue->column_name }}">
                                 <input type="hidden" name="suggested_value" value="{{ $issue->suggested_value }}">
-                                <span class="tooltip-trigger">
-                                    <button
-                                        class="table-primary-button action-button"
-                                        type="submit"
-                                        aria-label="Исправить значение"
-                                        {{ $issue->status !== 'open' || ! $issue->suggested_value ? 'disabled' : '' }}
-                                    >Исправить</button>
-
-                                    @if($issue->suggested_value)
-                                        <span class="tooltip-card">
-                                            <span class="tooltip-label">Сейчас</span>
-                                            <span class="tooltip-value">{{ $currentValue }}</span>
-                                            <span class="tooltip-arrow-line">
-                                                <span>Поменяем</span>
-                                                <span aria-hidden="true">→</span>
-                                            </span>
-                                            <span class="tooltip-label">Станет</span>
-                                            <span class="tooltip-value">{{ $nextValue }}</span>
-                                        </span>
-                                    @endif
-                                </span>
+                                <button
+                                    class="table-primary-button action-button"
+                                    type="submit"
+                                    aria-label="Исправить значение"
+                                    {{ $issue->status !== 'open' || ! $issue->suggested_value ? 'disabled' : '' }}
+                                >Исправить</button>
                             </form>
                             <form method="POST" action="/issues/{{ $issue->id }}/fix-similar" class="table-action-form" data-issues-action-form>
                                 @csrf
