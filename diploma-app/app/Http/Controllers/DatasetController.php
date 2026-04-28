@@ -9,7 +9,9 @@ use App\Services\DatasetAnalysisService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use RuntimeException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\Process\Process;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -85,7 +87,7 @@ class DatasetController extends Controller
             ]);
         });
 
-        if (app()->environment('testing')) {
+        if (app()->environment(['testing', 'local'])) {
             ProcessDatasetImport::dispatchSync($dataset->id);
         } else {
             ProcessDatasetImport::dispatch($dataset->id);
@@ -133,38 +135,59 @@ class DatasetController extends Controller
             ->with('success', 'Проверка таблицы запущена повторно.');
     }
 
-    public function export(Dataset $dataset): Response
+    public function export(Dataset $dataset): BinaryFileResponse
     {
         Gate::authorize('update', $dataset);
 
         $headers = $dataset->headers ?? [];
         $safeName = Str::slug($dataset->name ?: pathinfo($dataset->source_filename, PATHINFO_FILENAME) ?: 'table');
+        $exportDirectory = storage_path('app/private/exports');
 
-        return response()->streamDownload(function () use ($dataset, $headers) {
-            $handle = fopen('php://output', 'w');
+        if (! is_dir($exportDirectory)) {
+            mkdir($exportDirectory, 0777, true);
+        }
 
-            fwrite($handle, "\xEF\xBB\xBF");
-            fputcsv($handle, $headers, ';');
+        $payloadPath = tempnam(sys_get_temp_dir(), 'dataset-export-');
+        $targetPath = $exportDirectory.DIRECTORY_SEPARATOR.$safeName.'-processed-'.now()->format('YmdHis').'.xlsx';
+        $scriptPath = base_path('scripts/json_to_xlsx.py');
 
-            $dataset->activeRows()
-                ->orderBy('row_index')
-                ->chunk(500, function ($rows) use ($handle, $headers) {
-                    foreach ($rows as $row) {
-                        $payload = $row->payload ?? [];
-                        $line = [];
+        if (! $payloadPath || ! is_file($scriptPath)) {
+            throw new RuntimeException('Не удалось подготовить выгрузку таблицы.');
+        }
 
-                        foreach ($headers as $header) {
-                            $line[] = (string) ($payload[$header] ?? '');
-                        }
+        $rows = [];
 
-                        fputcsv($handle, $line, ';');
-                    }
-                });
+        $dataset->activeRows()
+            ->orderBy('row_index')
+            ->chunk(500, function ($chunk) use (&$rows, $headers) {
+                foreach ($chunk as $row) {
+                    $payload = $row->payload ?? [];
+                    $rows[] = array_map(
+                        fn (string $header) => (string) ($payload[$header] ?? ''),
+                        $headers
+                    );
+                }
+            });
 
-            fclose($handle);
-        }, $safeName.'-processed.csv', [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-        ]);
+        file_put_contents($payloadPath, json_encode([
+            'headers' => $headers,
+            'rows' => $rows,
+        ], JSON_UNESCAPED_UNICODE));
+
+        $process = new Process(['python', $scriptPath, $payloadPath, $targetPath]);
+        $process->setEnv(['PYTHONIOENCODING' => 'UTF-8']);
+        $process->setTimeout(300);
+        $process->run();
+
+        @unlink($payloadPath);
+
+        if (! $process->isSuccessful() || ! is_file($targetPath)) {
+            throw new RuntimeException(
+                trim($process->getErrorOutput()) ?: 'Не удалось собрать XLSX-файл для скачивания.'
+            );
+        }
+
+        return response()->download($targetPath, $safeName.'-processed.xlsx')->deleteFileAfterSend(true);
     }
 
     public function destroy(Dataset $dataset): RedirectResponse

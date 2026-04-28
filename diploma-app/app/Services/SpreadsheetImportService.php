@@ -151,6 +151,7 @@ class SpreadsheetImportService
         }
 
         $process = new Process(['python', $scriptPath, $path]);
+        $process->setEnv(['PYTHONIOENCODING' => 'UTF-8']);
         $process->setTimeout(300);
         $process->run();
 
@@ -277,6 +278,37 @@ class SpreadsheetImportService
 
     private function normalizeCell(string $value): string
     {
-        return trim(Str::of($value)->replace("\xEF\xBB\xBF", '')->value());
+        $value = trim(Str::of($value)->replace("\xEF\xBB\xBF", '')->value());
+
+        return $this->repairMojibake($value);
+    }
+
+    private function repairMojibake(string $value): string
+    {
+        if ($value === '') {
+            return $value;
+        }
+
+        $bytes = '';
+
+        foreach (preg_split('//u', $value, -1, PREG_SPLIT_NO_EMPTY) as $character) {
+            $codepoint = mb_ord($character, 'UTF-8');
+
+            if ($codepoint === false || $codepoint > 255) {
+                return $value;
+            }
+
+            $bytes .= chr($codepoint);
+        }
+
+        if (! mb_check_encoding($bytes, 'UTF-8')) {
+            return $value;
+        }
+
+        if (! preg_match('/\p{Cyrillic}/u', $bytes)) {
+            return $value;
+        }
+
+        return trim($bytes);
     }
 }
