@@ -1,4 +1,4 @@
-@props(['current' => 'issues'])
+@props(['current' => 'issues', 'datasetId' => null])
 
 <div class="panel conflicts-panel">
     <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -14,14 +14,14 @@
 
         <div class="conflicts-tabs" role="tablist" aria-label="Раздел конфликтов">
             <a
-                href="/issues"
+                href="/issues{{ $datasetId ? '?dataset='.$datasetId : '' }}"
                 class="conflicts-tab {{ $current === 'issues' ? 'is-active' : '' }}"
                 aria-current="{{ $current === 'issues' ? 'page' : 'false' }}"
             >
                 Ошибки
             </a>
             <a
-                href="/duplicates"
+                href="/duplicates{{ $datasetId ? '?dataset='.$datasetId : '' }}"
                 class="conflicts-tab {{ $current === 'duplicates' ? 'is-active' : '' }}"
                 aria-current="{{ $current === 'duplicates' ? 'page' : 'false' }}"
             >

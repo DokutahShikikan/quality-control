@@ -8,7 +8,7 @@
 
 <section class="panel">
     <x-section-header title="Последние ошибки">
-        <a href="/issues" class="secondary-button">Все ошибки</a>
+        <a href="/issues?dataset={{ $dataset->id }}" class="secondary-button">Все ошибки</a>
     </x-section-header>
 
     <x-data-table class="mt-6" sticky>

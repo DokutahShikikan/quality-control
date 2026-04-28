@@ -25,32 +25,34 @@ class IssueController extends Controller
         return view('issues.partials.table-panel', $this->issuesViewData($request));
     }
 
-    public function fix(Request $request, int $issue, DatasetAnalysisService $analysisService): RedirectResponse|JsonResponse
+    public function fix(Request $request, int $issue): RedirectResponse|JsonResponse
     {
         $issue = $this->resolveIssue($issue);
 
         if (! $issue) {
-            return $this->fixFromSnapshot($request, $analysisService);
+            return $this->fixFromSnapshot($request);
         }
 
         Gate::authorize('update', $issue->dataset);
 
         if (! $issue->suggested_value || ! $issue->datasetRow || ! $issue->column_name) {
-            return back()->with('error', 'Для этой ошибки нет безопасного автоматического исправления по шаблону.');
+            return $this->actionResponse($request, 'Для этой ошибки нет безопасного автоматического исправления по шаблону.', false, 422);
         }
 
         $payload = $issue->datasetRow->payload;
         $payload[$issue->column_name] = $issue->suggested_value;
 
-        $issue->datasetRow->update(['payload' => $payload]);
-        $issue->update(['status' => 'fixed']);
+        DB::transaction(function () use ($issue, $payload) {
+            $issue->datasetRow->update(['payload' => $payload]);
+            $this->similarIssuesQuery($issue)->update(['status' => 'fixed']);
+        });
 
-        $analysisService->analyze($issue->dataset, 'regex_fix');
+        $this->refreshDatasetState($issue->dataset);
 
-        return $this->actionResponse($request, 'Значение исправлено, и таблица проверена заново.');
+        return $this->actionResponse($request, 'Значение исправлено.');
     }
 
-    public function ignore(Request $request, int $issue, DatasetAnalysisService $analysisService): RedirectResponse|JsonResponse
+    public function ignore(Request $request, int $issue): RedirectResponse|JsonResponse
     {
         $issue = $this->resolveIssue($issue);
 
@@ -61,12 +63,12 @@ class IssueController extends Controller
         Gate::authorize('update', $issue->dataset);
 
         $issue->update(['status' => 'ignored']);
-        $analysisService->refreshDatasetSummary($issue->dataset);
+        $this->refreshDatasetState($issue->dataset);
 
         return $this->actionResponse($request, 'Ошибка отмечена как пропущенная.');
     }
 
-    public function fixSimilar(Request $request, int $issue, DatasetAnalysisService $analysisService): RedirectResponse|JsonResponse
+    public function fixSimilar(Request $request, int $issue): RedirectResponse|JsonResponse
     {
         $issue = $this->resolveIssue($issue);
 
@@ -102,9 +104,9 @@ class IssueController extends Controller
             }
         });
 
-        $analysisService->analyze($issue->dataset, 'regex_fix');
+        $this->refreshDatasetState($issue->dataset);
 
-        return $this->actionResponse($request, 'Все подобные ошибки исправлены, и таблица проверена заново.');
+        return $this->actionResponse($request, 'Все подобные ошибки исправлены.');
     }
 
     private function resolveIssue(int $issueId): ?Issue
@@ -116,7 +118,7 @@ class IssueController extends Controller
             ->first();
     }
 
-    private function fixFromSnapshot(Request $request, DatasetAnalysisService $analysisService): RedirectResponse|JsonResponse
+    private function fixFromSnapshot(Request $request): RedirectResponse|JsonResponse
     {
         $datasetId = (int) $request->integer('dataset_id');
         $datasetRowId = (int) $request->integer('dataset_row_id');
@@ -150,11 +152,21 @@ class IssueController extends Controller
         $payload = $datasetRow->payload;
         $payload[$columnName] = $suggestedValue;
 
-        $datasetRow->update(['payload' => $payload]);
+        DB::transaction(function () use ($dataset, $datasetRow, $datasetRowId, $columnName, $suggestedValue, $payload) {
+            $datasetRow->update(['payload' => $payload]);
 
-        $analysisService->analyze($dataset, 'regex_fix');
+            Issue::query()
+                ->where('dataset_id', $dataset->id)
+                ->where('dataset_row_id', $datasetRowId)
+                ->where('column_name', $columnName)
+                ->where('status', 'open')
+                ->where('suggested_value', $suggestedValue)
+                ->update(['status' => 'fixed']);
+        });
 
-        return $this->actionResponse($request, 'Значение исправлено, и таблица проверена заново.', true, 200, true);
+        $this->refreshDatasetState($dataset);
+
+        return $this->actionResponse($request, 'Значение исправлено.', true, 200, true);
     }
 
     private function similarIssuesQuery(Issue $issue)
@@ -197,9 +209,22 @@ class IssueController extends Controller
             'low' => 'Низкая',
         ];
 
+        $selectedDataset = null;
+        $datasetId = (int) $request->integer('dataset');
+
         $issueQuery = Issue::query()
             ->whereIn('dataset_id', Auth::user()->datasets()->pluck('id'))
             ->with(['dataset', 'datasetRow'])
+            ->when($datasetId > 0, function ($query) use ($datasetId, &$selectedDataset) {
+                $selectedDataset = Dataset::query()
+                    ->whereKey($datasetId)
+                    ->where('user_id', Auth::id())
+                    ->first();
+
+                if ($selectedDataset) {
+                    $query->where('dataset_id', $selectedDataset->id);
+                }
+            })
             ->when($request->filled('q'), function ($query) use ($request) {
                 $term = trim((string) $request->string('q'));
                 $query->where(function ($inner) use ($term) {
@@ -224,10 +249,11 @@ class IssueController extends Controller
 
         return [
             'issues' => $issueQuery->paginate(50)->withQueryString(),
-            'filters' => $request->only(['q', 'status', 'issue_type', 'severity', 'sort']),
+            'filters' => $request->only(['q', 'status', 'issue_type', 'severity', 'sort', 'dataset']),
             'statusLabels' => $statusLabels,
             'issueTypeLabels' => $issueTypeLabels,
             'severityLabels' => $severityLabels,
+            'selectedDataset' => $selectedDataset,
         ];
     }
 
@@ -245,10 +271,21 @@ class IssueController extends Controller
             ], $status);
         }
 
-        $response = $redirectToIssues ? redirect('/issues') : back();
+        $redirectUrl = '/issues';
+
+        if ($request->filled('dataset')) {
+            $redirectUrl .= '?dataset='.$request->integer('dataset');
+        }
+
+        $response = $redirectToIssues ? redirect($redirectUrl) : back();
 
         return $success
             ? $response->with('success', $message)
             : $response->with('error', $message);
+    }
+
+    private function refreshDatasetState(Dataset $dataset): void
+    {
+        app(DatasetAnalysisService::class)->refreshDatasetSummary($dataset);
     }
 }

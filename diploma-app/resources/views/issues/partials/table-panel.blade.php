@@ -37,6 +37,7 @@
                         <div class="table-actions issue-actions">
                             <form method="POST" action="/issues/{{ $issue->id }}/fix" class="table-action-form" data-issues-action-form>
                                 @csrf
+                                <input type="hidden" name="dataset" value="{{ $filters['dataset'] ?? '' }}">
                                 <input type="hidden" name="dataset_id" value="{{ $issue->dataset_id }}">
                                 <input type="hidden" name="dataset_row_id" value="{{ $issue->dataset_row_id }}">
                                 <input type="hidden" name="column_name" value="{{ $issue->column_name }}">
@@ -44,16 +45,17 @@
                                 <button
                                     class="table-primary-button action-button"
                                     type="submit"
-                                    aria-label="Исправить значение"
                                     {{ $issue->status !== 'open' || ! $issue->suggested_value ? 'disabled' : '' }}
                                 >Исправить</button>
                             </form>
                             <form method="POST" action="/issues/{{ $issue->id }}/fix-similar" class="table-action-form" data-issues-action-form>
                                 @csrf
+                                <input type="hidden" name="dataset" value="{{ $filters['dataset'] ?? '' }}">
                                 <button class="table-secondary-button action-button min-h-14 px-3 py-3" type="submit" {{ $issue->status !== 'open' || ! $issue->suggested_value ? 'disabled' : '' }}>Исправить все подобные ошибки</button>
                             </form>
                             <form method="POST" action="/issues/{{ $issue->id }}/ignore" class="table-action-form" data-issues-action-form>
                                 @csrf
+                                <input type="hidden" name="dataset" value="{{ $filters['dataset'] ?? '' }}">
                                 <button class="table-secondary-button action-button" type="submit" {{ $issue->status !== 'open' ? 'disabled' : '' }}>Пропустить</button>
                             </form>
                         </div>

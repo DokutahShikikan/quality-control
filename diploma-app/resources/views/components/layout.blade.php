@@ -35,14 +35,18 @@
                         </div>
                     @endif
 
-
-                    @if(in_array($current, ['issues', 'duplicates'], true))
-                        <div class="mb-6">
-                            <x-conflicts-tabs :current="$current" />
-                        </div>
-                    @endif
                     {{ $slot }}
                 </main>
+            </div>
+        </div>
+
+        <div class="cookie-banner hidden" data-cookie-banner>
+            <div class="cookie-banner__card">
+                <div class="cookie-banner__copy">
+                    <strong>Мы используем cookies</strong>
+                    <span>Они нужны для входа в аккаунт, сохранения сессии и корректной работы сайта.</span>
+                </div>
+                <button type="button" class="primary-button cookie-banner__button" data-cookie-accept>Понятно</button>
             </div>
         </div>
     </body>

@@ -8,8 +8,17 @@
     @endphp
 
     <div class="space-y-6">
+        <x-conflicts-tabs current="duplicates" :dataset-id="$selectedDataset?->id" />
+
         <div class="panel">
             <form method="GET" action="/duplicates" class="space-y-4">
+                @if($selectedDataset)
+                    <input type="hidden" name="dataset" value="{{ $selectedDataset->id }}">
+                    <p class="text-sm text-slate-500">
+                        Показаны повторы только для таблицы <span class="font-semibold text-slate-700">{{ $selectedDataset->name }}</span>.
+                    </p>
+                @endif
+
                 <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     <x-forms.input-field
                         class="md:col-span-2 xl:col-span-1"
@@ -42,7 +51,7 @@
 
                 <x-form-actions>
                     <button type="submit" class="primary-button">Применить</button>
-                    <a href="/duplicates" class="secondary-button">Сбросить</a>
+                    <a href="{{ $selectedDataset ? '/duplicates?dataset='.$selectedDataset->id : '/duplicates' }}" class="secondary-button">Сбросить</a>
                 </x-form-actions>
             </form>
         </div>

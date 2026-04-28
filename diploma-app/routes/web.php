@@ -21,6 +21,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/datasets/{dataset}', [DatasetController::class, 'show']);
     Route::get('/datasets/{dataset}/live-panels', [DatasetController::class, 'livePanels']);
     Route::post('/datasets/{dataset}/analyze', [DatasetController::class, 'analyze']);
+    Route::get('/datasets/{dataset}/export', [DatasetController::class, 'export']);
     Route::delete('/datasets/{dataset}', [DatasetController::class, 'destroy']);
 
     Route::get('/rules', [QualityRuleController::class, 'index']);

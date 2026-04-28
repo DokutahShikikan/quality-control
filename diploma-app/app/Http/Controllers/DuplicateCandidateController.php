@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Dataset;
 use App\Models\DuplicateCandidate;
 use App\Services\DatasetAnalysisService;
 use Illuminate\Http\RedirectResponse;
@@ -14,9 +15,22 @@ class DuplicateCandidateController extends Controller
 {
     public function index(Request $request)
     {
+        $selectedDataset = null;
+        $datasetId = (int) $request->integer('dataset');
+
         $duplicateQuery = DuplicateCandidate::query()
             ->whereIn('dataset_id', Auth::user()->datasets()->pluck('id'))
             ->with(['dataset', 'primaryRow', 'duplicateRow'])
+            ->when($datasetId > 0, function ($query) use ($datasetId, &$selectedDataset) {
+                $selectedDataset = Dataset::query()
+                    ->whereKey($datasetId)
+                    ->where('user_id', Auth::id())
+                    ->first();
+
+                if ($selectedDataset) {
+                    $query->where('dataset_id', $selectedDataset->id);
+                }
+            })
             ->when($request->filled('q'), function ($query) use ($request) {
                 $term = trim((string) $request->string('q'));
                 $query->where(function ($inner) use ($term) {
@@ -37,7 +51,8 @@ class DuplicateCandidateController extends Controller
 
         return view('duplicates.index', [
             'duplicates' => $duplicates,
-            'filters' => $request->only(['q', 'status', 'sort']),
+            'filters' => $request->only(['q', 'status', 'sort', 'dataset']),
+            'selectedDataset' => $selectedDataset,
         ]);
     }
 
@@ -45,12 +60,14 @@ class DuplicateCandidateController extends Controller
     {
         Gate::authorize('update', $duplicateCandidate->dataset);
 
-        $duplicateCandidate->duplicateRow->update(['is_active' => false]);
+        if ($duplicateCandidate->duplicateRow) {
+            $duplicateCandidate->duplicateRow->update(['is_active' => false]);
+        }
+
         $duplicateCandidate->update(['status' => 'fixed']);
+        $analysisService->refreshDatasetSummary($duplicateCandidate->dataset);
 
-        $analysisService->analyze($duplicateCandidate->dataset, 'duplicate_resolution');
-
-        return back()->with('success', 'Повторная строка исключена из таблицы, и проверка запущена заново.');
+        return back()->with('success', 'Повторная строка исключена из таблицы.');
     }
 
     public function ignore(DuplicateCandidate $duplicateCandidate, DatasetAnalysisService $analysisService): RedirectResponse
@@ -88,8 +105,8 @@ class DuplicateCandidateController extends Controller
             }
         });
 
-        $analysisService->analyze($duplicateCandidate->dataset, 'duplicate_resolution');
+        $analysisService->refreshDatasetSummary($duplicateCandidate->dataset);
 
-        return back()->with('success', 'Все повторы для этой строки удалены, и таблица проверена заново.');
+        return back()->with('success', 'Все повторы для этой строки удалены.');
     }
 }

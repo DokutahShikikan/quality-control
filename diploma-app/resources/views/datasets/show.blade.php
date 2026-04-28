@@ -65,7 +65,7 @@
                 <dl class="mt-8 grid gap-4 md:grid-cols-2">
                     <x-mini-stat label="Исходный файл" :value="$dataset->source_filename" />
                     <x-mini-stat label="Состояние загрузки" :value="$importStateLabel" />
-                    <x-mini-stat label="Последняя проверка" :value="optional($dataset->last_checked_at)->format('d.m.Y H:i') ?: 'Еще не запускалась'" />
+                    <x-mini-stat label="Последняя проверка" :value="optional($dataset->last_checked_at)->format('d.m.Y H:i') ?: 'Ещё не запускалась'" />
                     <x-mini-stat label="Ошибок по формату" :value="data_get($dataset->metrics, 'format_error_rate', 0).'%'"/>
                     <x-mini-stat label="Следующий шаг" :value="data_get($dataset->metrics, 'deepseek_stage_ready', false) ? 'Можно включать ИИ' : 'Сначала исправить понятные ошибки'" />
                 </dl>
@@ -77,8 +77,9 @@
                             <button class="primary-button" type="submit">Запустить проверку заново</button>
                         </form>
                     @endif
-                    <a href="/issues" class="secondary-button">Открыть ошибки</a>
-                    <a href="/duplicates" class="secondary-button">Открыть повторы</a>
+                    <a href="/issues?dataset={{ $dataset->id }}" class="secondary-button">Открыть ошибки</a>
+                    <a href="/duplicates?dataset={{ $dataset->id }}" class="secondary-button">Открыть повторы</a>
+                    <a href="/datasets/{{ $dataset->id }}/export" class="secondary-button">Скачать переработанный файл</a>
                     <form method="POST" action="/datasets/{{ $dataset->id }}">
                         @csrf
                         @method('DELETE')

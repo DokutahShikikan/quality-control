@@ -1,6 +1,6 @@
 <section class="panel">
     <x-section-header title="Последние повторы">
-        <a href="/duplicates" class="secondary-button">Все повторы</a>
+        <a href="/duplicates?dataset={{ $dataset->id }}" class="secondary-button">Все повторы</a>
     </x-section-header>
 
     <x-data-table class="mt-6" sticky>

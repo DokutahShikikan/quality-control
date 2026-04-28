@@ -9,9 +9,11 @@ use App\Services\DatasetAnalysisService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 
 class DatasetController extends Controller
 {
@@ -129,6 +131,40 @@ class DatasetController extends Controller
 
         return redirect("/datasets/{$dataset->id}")
             ->with('success', 'Проверка таблицы запущена повторно.');
+    }
+
+    public function export(Dataset $dataset): Response
+    {
+        Gate::authorize('update', $dataset);
+
+        $headers = $dataset->headers ?? [];
+        $safeName = Str::slug($dataset->name ?: pathinfo($dataset->source_filename, PATHINFO_FILENAME) ?: 'table');
+
+        return response()->streamDownload(function () use ($dataset, $headers) {
+            $handle = fopen('php://output', 'w');
+
+            fwrite($handle, "\xEF\xBB\xBF");
+            fputcsv($handle, $headers, ';');
+
+            $dataset->activeRows()
+                ->orderBy('row_index')
+                ->chunk(500, function ($rows) use ($handle, $headers) {
+                    foreach ($rows as $row) {
+                        $payload = $row->payload ?? [];
+                        $line = [];
+
+                        foreach ($headers as $header) {
+                            $line[] = (string) ($payload[$header] ?? '');
+                        }
+
+                        fputcsv($handle, $line, ';');
+                    }
+                });
+
+            fclose($handle);
+        }, $safeName.'-processed.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 
     public function destroy(Dataset $dataset): RedirectResponse
