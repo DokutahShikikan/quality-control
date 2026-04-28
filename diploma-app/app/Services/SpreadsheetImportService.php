@@ -75,7 +75,11 @@ class SpreadsheetImportService
     private function importXlsx(string $path): array
     {
         if (class_exists(ZipArchive::class)) {
-            return $this->importXlsxWithPhp($path);
+            try {
+                return $this->importXlsxWithPhp($path);
+            } catch (\Throwable) {
+                return $this->importXlsxWithPython($path);
+            }
         }
 
         return $this->importXlsxWithPython($path);

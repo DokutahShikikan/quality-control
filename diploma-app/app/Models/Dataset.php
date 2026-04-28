@@ -5,10 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Dataset extends Model
 {
     protected $guarded = [];
+
+    protected static function booted(): void
+    {
+        static::deleting(function (Dataset $dataset) {
+            if ($dataset->source_path && Storage::disk('local')->exists($dataset->source_path)) {
+                Storage::disk('local')->delete($dataset->source_path);
+            }
+        });
+    }
 
     protected function casts(): array
     {

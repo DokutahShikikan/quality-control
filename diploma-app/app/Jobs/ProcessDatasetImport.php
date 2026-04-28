@@ -68,6 +68,12 @@ class ProcessDatasetImport implements ShouldQueue
             });
 
             $analysisService->analyze($dataset->fresh(), 'import');
+
+            if ($dataset->source_path && Storage::disk('local')->exists($dataset->source_path)) {
+                Storage::disk('local')->delete($dataset->source_path);
+            }
+
+            $dataset->update(['source_path' => null]);
         } catch (Throwable $exception) {
             $dataset->update([
                 'import_status' => 'failed',
