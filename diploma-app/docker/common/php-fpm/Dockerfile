@@ -6,6 +6,7 @@ FROM php:8.5-fpm AS builder
 # We don't need to install Node.js or build assets, as it was done in the Nginx image
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    git \
     unzip \
     libpq-dev \
     libonig-dev \

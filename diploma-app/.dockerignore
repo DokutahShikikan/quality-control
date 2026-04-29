@@ -1,0 +1,15 @@
+vendor/
+node_modules/
+.git/
+.idea/
+.vscode/
+.dockerignore_backup_dir/
+storage/logs/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/testing/
+storage/framework/views/
+bootstrap/cache/*.php
+.env
+npm-debug.log
+yarn-error.log
